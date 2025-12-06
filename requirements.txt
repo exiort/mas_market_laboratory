@@ -1,0 +1,8 @@
+mesa 
+pandas 
+numpy 
+sortedcontainers 
+sortedcontainers-stubs
+deap 
+matplotlib
+pytest
