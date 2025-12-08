@@ -1,32 +1,39 @@
 from __future__ import annotations
 from typing import Optional, Dict
-from enum import Enum
+from enum import Enum, auto
 from dataclasses import dataclass, field
 
+from market.market_structures.orderview import OrderView
 from market.market_structures.trade import Trade
 
 
 
 class OrderType(Enum):
-    LIMIT = 1
-    MARKET = 2
+    LIMIT = auto()
+    MARKET = auto()
 
 
 class Side(Enum):
-    BUY = 1
-    SELL = 2
+    BUY = auto()
+    SELL = auto()
 
 
-class OrderStatus(Enum):
-    PENDING = 1          
-    OPEN = 2             
-    PARTIALLY_FILLED = 3 
-    FILLED = 4           
-    CANCELED = 5         
-    EXPIRED = 6          
-    REJECTED = 7         
+class OrderLifecycle(Enum):
+    NEW = auto()
+    WORKING = auto()
+    DONE = auto()
 
 
+class OrderEndReasons(Enum):
+    NONE = auto()
+    FILLED = auto()
+    CANCELLED = auto()
+    EXPIRED = auto()
+    REJECTED_INSUFFICIENT_FUND = auto()
+    REJECTED_INSUFFICIENT_MARKET_DEPTH = auto()
+    KILLED_WASH_TRADE = auto()
+    
+    
 @dataclass
 class Order:
     order_id:int
@@ -40,16 +47,20 @@ class Order:
     side:Side
 
     quantity:int
-    price:Optional[float]
+    price:Optional[int]
 
-    status:OrderStatus
+    lifecycle:OrderLifecycle
+    end_reason:OrderEndReasons
+    
     remaining_quantity:int = field(init=False)
     
-    avarage_trade_price:float
+    average_trade_price:Optional[int] = field(default=None)
     trades:Dict[int, Trade] = field(default_factory=dict)
     
 
     def __post_init__(self) -> None:
         self.remaining_quantity = self.quantity
 
-    
+
+    def create_view(self) -> OrderView:
+        return OrderView(self)

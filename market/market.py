@@ -2,17 +2,17 @@ from __future__ import annotations
 from typing import Optional
 import time
 
+from market.global_vars import MarketConfig, HYBRID_TIME
 from market.market_components.exchange_ledger import ExchangeLedger
 from market.market_components.cda_engine import CDAEngine
 from market.market_components.storage_ledger import StorageLedger
-from market.market_structures.order import Order, OrderStatus, Side, OrderType
+from market.market_structures.accountview import AccountView
+from market.market_structures.order import Order, OrderLifecycle, OrderEndReasons, Side, OrderType
+from market.market_structures.orderview import OrderView
 
 
 
 class Market:
-    macro_tick:int
-    micro_tick:int
-    
     exchange_ledger:ExchangeLedger
     cda_engine:CDAEngine
     storage_ledger:StorageLedger
@@ -20,18 +20,10 @@ class Market:
     _next_order_id:int
     
     
-    def __init__(self, macro_tick:int, micro_tick:int) -> None:
-        self.macro_tick = macro_tick
-        self.micro_tick = micro_tick
-        
-        self.storage_ledger = StorageLedger(
-            macro_tick=macro_tick,
-            micro_tick=micro_tick
-        )
+    def __init__(self) -> None:      
+        self.storage_ledger = StorageLedger()
         self.exchange_ledger = ExchangeLedger()
         self.cda_engine = CDAEngine(
-            macro_tick=macro_tick,
-            micro_tick=micro_tick,
             storage_ledger=self.storage_ledger,
             exchange_ledger=self.exchange_ledger
         )
@@ -44,38 +36,44 @@ class Market:
         self._next_order_id += 1
 
         return order_id
+
+        
+    def register_agent(
+            self,
+            agent_id:int,
+            initial_cash:float=0.0,
+            initial_shares:int=0
+    ) -> Optional[AccountView]:
+        if self.exchange_ledger.is_account_exist(agent_id): return
+        if initial_cash < 0: return
+        if initial_shares < 0: return
+
+        return self.exchange_ledger.register_account(
+            agent_id=agent_id,
+            initial_cash=initial_cash,
+            initial_shares=initial_shares
+        )
+        
     
-        
-    def update_ticks(self, macro_tick:int, micro_tick:int) -> None:
-        assert macro_tick >= self.macro_tick
-        if macro_tick == self.macro_tick:
-            assert micro_tick > self.micro_tick
-        
-        self.macro_tick = macro_tick
-        self.micro_tick = micro_tick
-
-        self.storage_ledger.update_ticks(macro_tick, micro_tick)
-        self.cda_engine.update_ticks(macro_tick, micro_tick)
-
-
     def create_order(
             self,
             agent_id:int,
             order_type:OrderType,
             side:Side,
             quantity:int,
-            price:Optional[float] = None
-    ):
+            price:Optional[float]=None
+    ) -> Optional[OrderView]:
         if not self.exchange_ledger.is_account_exist(agent_id):
             return
-        
+
         if not quantity > 0:
             return
 
         if order_type == OrderType.LIMIT:
             if price is None or price <= 0:
                 return
-
+            price = int(price * MarketConfig.PRICE_SCALE)
+            
         elif order_type == OrderType.MARKET:
             if price is not None:
                 return
@@ -84,15 +82,32 @@ class Market:
             order_id=self.__get_order_id(),
             agent_id=agent_id,
             timestamp=time.time(),
-            macro_tick=self.macro_tick,
-            micro_tick=self.micro_tick,
+            macro_tick=HYBRID_TIME.MACRO_TICK,
+            micro_tick=HYBRID_TIME.MICRO_TICK,
             order_type=order_type,
             side=side,
             quantity=quantity,
             price=price,
-            status=OrderStatus.PENDING,
-            avarage_trade_price=-1
+            lifecycle=OrderLifecycle.NEW,
+            end_reason=OrderEndReasons.NONE
         )
 
         self.cda_engine.process_new_order(order)
+        
+        return order.create_view()
 
+
+    def cancel_order(self, agent_id:int, order_id:int) -> None:
+        if not self.exchange_ledger.is_account_exist(agent_id): return
+
+        order = self.storage_ledger.get_order(order_id)
+        if order is None: return
+        if order.agent_id != agent_id: return
+        if order.lifecycle != OrderLifecycle.WORKING: return
+        if order.end_reason != OrderEndReasons.NONE: return
+        
+        self.cda_engine.cancel_order(order_id)
+        
+
+    def expire_session(self) -> None:
+        self.cda_engine.expire_session()

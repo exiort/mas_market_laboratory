@@ -1,6 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
+from market.global_vars import MarketConfig
+from market.market_structures.tradeview import TradeView
+
 
 
 @dataclass(frozen=True)
@@ -17,7 +20,16 @@ class Trade:
     buyer_agent_id:int
     buy_order_id:int
 
-    price:float
+    price:int
     quantity:int
     
     
+    def create_view(self) -> TradeView:
+        return TradeView(
+            trade_id=self.trade_id,
+            timestamp=self.timestamp,
+            macro_tick=self.macro_tick,
+            micro_tick=self.micro_tick,
+            price=self.price / MarketConfig.PRICE_SCALE,
+            quantity=self.quantity
+        )

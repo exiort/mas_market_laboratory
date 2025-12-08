@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict
+from typing import Dict, Optional
 
 from market.market_structures.deposit import Deposit
 from market.market_structures.order import Order
@@ -8,29 +8,15 @@ from market.market_structures.trade import Trade
 
 
 class StorageLedger:
-    macro_tick:int
-    micro_tick:int
-
     orders:Dict[int, Order] #OrderID -> Order
     trades:Dict[int, Trade] #TradeID -> Trade
     deposits:Dict[int, Deposit] #DepositID -> Deposit
 
 
-    def __init__(self, macro_tick:int, micro_tick:int) -> None:
-        self.macro_tick = macro_tick
-        self.micro_tick = micro_tick
+    def __init__(self) -> None:
         self.orders = {}
         self.trades = {}
         self.deposits = {}
-
-
-    def update_ticks(self, macro_tick:int, micro_tick:int) -> None:
-        assert macro_tick >= self.macro_tick
-        if macro_tick == self.macro_tick:
-            assert micro_tick > self.micro_tick
-            
-        self.macro_tick = macro_tick
-        self.micro_tick = micro_tick
         
 
     def add_order(self, order:Order) -> bool:
@@ -56,7 +42,19 @@ class StorageLedger:
         self.deposits[deposit.deposit_id] = deposit
         return True
 
+    
+    def get_order(self, order_id:int) -> Optional[Order]:
+        return self.orders.get(order_id)
 
+    
+    def get_trade(self, trade_id:int) -> Optional[Trade]:
+        return self.trades.get(trade_id)
+
+
+    def get_deposit(self, deposit_id:int) -> Optional[Deposit]:
+        return self.deposits.get(deposit_id)
+    
+    
     def remove_order(self, order_id:int) -> bool:
         if order_id not in self.orders:
             return False
