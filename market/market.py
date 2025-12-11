@@ -92,6 +92,9 @@ class Market:
             end_reason=OrderEndReasons.NONE
         )
 
+        if not self.storage_ledger.add_order(order):
+            return
+        
         self.cda_engine.process_new_order(order)
         
         return order.create_view()

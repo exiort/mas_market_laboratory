@@ -17,7 +17,41 @@ class Account:
     reserved_cash:Dict[int, Tuple[int, int]] = field(default_factory=dict) #OrderID -> (quantity, price)
     reserved_shares:Dict[int, int] = field(default_factory=dict) #OrderID -> quantity
 
-    deposited_cash:Dict[int, int] = field(default_factory=dict) #DepositID -> depositted + interest
+    deposited_cash:Dict[int, int] = field(default_factory=dict) #DepositID -> depositted
+    
 
     def create_view(self) -> AccountView:
         return AccountView(self)
+
+
+    def get_total_reserved_cash(self) -> int:
+        if not self.reserved_cash:
+            return 0
+
+        total = 0
+        for quantity, price in self.reserved_cash.values():
+            total += quantity * price
+
+        return total
+        
+
+    def get_total_reserved_shares(self) -> int:
+        if not self.reserved_shares:
+            return 0
+
+        total = 0
+        for quantity in self.reserved_shares.values():
+            total += quantity
+
+        return total
+
+
+    def get_total_deposited_cash(self) -> int:
+        if not self.deposited_cash:
+            return 0
+
+        total = 0
+        for deposited in self.deposited_cash.values():
+            total += deposited
+
+        return total            
