@@ -3,10 +3,15 @@ from typing import Optional
 import time
 
 from market.global_vars import MarketConfig, HYBRID_TIME
+from market.market_components.economy_module import EconomyModule
 from market.market_components.exchange_ledger import ExchangeLedger
 from market.market_components.cda_engine import CDAEngine
 from market.market_components.storage_ledger import StorageLedger
+from market.market_structures import economy_insight
+from market.market_structures import economy_insight_view
 from market.market_structures.accountview import AccountView
+from market.market_structures.economy_insight_view import EconomyInsightView
+from market.market_structures.economy_scenario import EconomyScenario
 from market.market_structures.order import Order, OrderLifecycle, OrderEndReasons, Side, OrderType
 from market.market_structures.orderview import OrderView
 
@@ -16,18 +21,20 @@ class Market:
     exchange_ledger:ExchangeLedger
     cda_engine:CDAEngine
     storage_ledger:StorageLedger
-
+    economy_module:EconomyModule
+    
     _next_order_id:int
     
     
-    def __init__(self) -> None:      
-        self.storage_ledger = StorageLedger()
+    def __init__(self, scenerio:EconomyScenario) -> None:      
+        self.storage_ledger = StorageLedger("")
         self.exchange_ledger = ExchangeLedger()
         self.cda_engine = CDAEngine(
             storage_ledger=self.storage_ledger,
             exchange_ledger=self.exchange_ledger
         )
-
+        self.economy_module = EconomyModule(scenerio)
+        
         self._next_order_id = 0
         
 
@@ -114,3 +121,14 @@ class Market:
 
     def expire_session(self) -> None:
         self.cda_engine.expire_session()
+
+
+    def get_economy_insight(self) -> EconomyInsightView:
+        economy_insight = self.economy_module.get_economy_insight(HYBRID_TIME.MACRO_TICK)
+
+        if not self.storage_ledger.add_economy_insight(economy_insight):
+            economy_insight = self.storage_ledger.get_economy_insight(HYBRID_TIME.MACRO_TICK)
+            assert economy_insight
+
+        return economy_insight.create_view()
+        
