@@ -1,8 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Dict, Tuple
 
-from market.global_vars import MarketConfig
+from simulation_configurations import get_simulation_configurations
 from market.market_structures.economy_insight_view import EconomyInsightView
 
 
@@ -17,12 +17,14 @@ class EconomyInsight:
     width:float
 
     tv_interval:Tuple[int, int]
-    deposit_rates:Tuple[Tuple[int, float], ...] #((term-rate), ...)
+    deposit_rates:Dict[int, float] #((term-rate), ...)
     
 
     def create_view(self) -> EconomyInsightView:
+        SIM_CONFIG = get_simulation_configurations()
+        
         return EconomyInsightView(
             macro_tick=self.macro_tick,
-            tv_interval=(self.tv_interval[0] / MarketConfig.PRICE_SCALE, self.tv_interval[1] / MarketConfig.PRICE_SCALE),
+            tv_interval=(self.tv_interval[0] / SIM_CONFIG.PRICE_SCALE, self.tv_interval[1] / SIM_CONFIG.PRICE_SCALE),
             deposit_rates=self.deposit_rates
         )

@@ -1,42 +1,61 @@
 from __future__ import annotations
-from typing import Dict, Optional
+from sortedcontainers import SortedDict
+from typing import Dict, List, Optional
 import math
+import time
 
-from market.global_vars import MarketConfig
+from mas_market_labratory.simulation.market.market_structures.depositview import DepositView
+from storage_ledger import StorageLedger
+from simulation_configurations import get_simulation_configurations
+from simulation_realtime_data import get_simulation_realtime_data
 from market.market_structures.account import Account
 from market.market_structures.accountview import AccountView
 from market.market_structures.order import Order, OrderLifecycle, OrderEndReasons, OrderType, Side
 from market.market_structures.trade import Trade
+from market.market_structures.deposit import Deposit
 
 
 
 class ExchangeLedger:
-    accounts:Dict[int, Account] #AgentID -> Account
-
-    __next_account_id:int
-
+    storage_ledger:StorageLedger
     
-    def __init__(self) -> None:
+    accounts:Dict[int, Account] #AgentID -> Account
+    open_deposits:SortedDict[int, List[Deposit]]
+    
+    __next_account_id:int
+    __next_deposit_id:int
+    
+    def __init__(self, storage_ledger:StorageLedger) -> None:
         self.accounts = {}
+        self.open_deposits = SortedDict()
         self.__next_account_id = 0
 
+        self.storage_ledger = storage_ledger
 
+        
     def __get_account_id(self) -> int:
         account_id = self.__next_account_id
         self.__next_account_id += 1
 
         return account_id
 
+    @property
+    def deposit_id(self) -> int:
+        deposit_id = self.__next_deposit_id
+        self.__next_deposit_id += 1
+
+        return deposit_id
     
     def register_account(self, agent_id:int, initial_cash:float=0.0, initial_shares:int=0) -> AccountView:
         assert agent_id not in self.accounts
         assert initial_cash >= 0
         assert initial_shares >= 0
-        
+
+        SIM_CONFIG = get_simulation_configurations()
         account = Account(
             self.__get_account_id(),
             agent_id,
-            int(initial_cash * MarketConfig.PRICE_SCALE),
+            int(initial_cash * SIM_CONFIG.PRICE_SCALE),
             initial_shares
         )
 
@@ -284,3 +303,83 @@ class ExchangeLedger:
             price_sum += trade.price * trade.quantity
 
         order.average_trade_price = int(price_sum / total_quantity)
+
+
+    def create_deposit(self, agent_id:int, term:int, deposit_cash:float) -> Optional[DepositView]:
+        assert self.is_account_exist(agent_id)
+
+        SIM_CONFIG = get_simulation_configurations()
+        assert term in SIM_CONFIG.ECONOMY_SCENARIO.deposit_terms 
+        assert deposit_cash > 0
+        
+        SIM_REALTIME_DATA = get_simulation_realtime_data()
+        assert SIM_REALTIME_DATA.MACRO_TICK + term <= SIM_CONFIG.SIMULATION_MACRO_TICK
+
+        deposit_cash = int(deposit_cash * SIM_CONFIG.PRICE_SCALE)
+        interest_rate = SIM_REALTIME_DATA.ECONOMY_INSIGHT.deposit_rates[term]
+        deposit = Deposit(
+            deposit_id=self.deposit_id,
+            agent_id=agent_id,
+            timestamp=time.time(),
+            creation_macro_tick=SIM_REALTIME_DATA.MACRO_TICK,
+            maturity_macro_tick=SIM_REALTIME_DATA.MACRO_TICK + term,
+            deposited_cash=deposit_cash,
+            interest_rate=interest_rate,
+            matured_cash=int(deposit_cash * (1 + interest_rate))
+        )
+
+        is_account_available = self.check_and_reverse_deposit(deposit)
+        if not is_account_available:
+            return
+
+        self.storage_ledger.add_deposit(deposit)
+        
+        if deposit.maturity_macro_tick not in self.open_deposits:
+            self.open_deposits[deposit.maturity_macro_tick] = [deposit]
+        else:
+            self.open_deposits[deposit.maturity_macro_tick].append(deposit)
+
+        return deposit.create_view()
+        
+
+    def check_and_reverse_deposit(self, deposit:Deposit) -> bool:
+        account = self.accounts.get(deposit.agent_id)
+        assert account is not None
+
+        required_cash = deposit.deposited_cash
+
+        if account.cash < required_cash:
+            return False
+
+        account.deposited_cash[deposit.deposit_id] = required_cash
+        account.cash -= required_cash
+
+        return True
+
+
+    def check_matured_deposits(self) -> None:
+        SIM_REALTIME_DATA = get_simulation_realtime_data()
+        
+        while True:
+            if not self.open_deposits:
+                return
+            
+            closest_maturity_macro_tick = self.open_deposits.keys()[0]
+            if closest_maturity_macro_tick > SIM_REALTIME_DATA.MACRO_TICK:
+                return
+
+            for mature_deposit in self.open_deposits[closest_maturity_macro_tick]:
+                self.release_deposit(mature_deposit)
+
+            del self.open_deposits[closest_maturity_macro_tick]
+            
+    
+    def release_deposit(self, deposit:Deposit) -> None:
+        account = self.accounts.get(deposit.agent_id)
+        assert account is not None
+
+        assert deposit.deposit_id in account.deposited_cash
+        assert deposit.deposited_cash == account.deposited_cash[deposit.deposit_id]
+
+        del account.deposited_cash[deposit.deposit_id]
+        account.cash += deposit.matured_cash

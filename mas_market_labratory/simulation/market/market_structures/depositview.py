@@ -4,9 +4,14 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class Deposit:
+class DepositView:
     deposit_id:int
     agent_id:int
 
-    depositted_cash:float
+    creation_macro_tick:int
+    maturity_macro_tick:int
+
+    deposited_cash:float
     interest_rate:float
+
+    matured_cash:float

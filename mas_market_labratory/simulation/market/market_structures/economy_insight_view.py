@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Tuple
+from typing import Dict, Tuple
 from dataclasses import dataclass
 
 
@@ -9,4 +9,4 @@ class EconomyInsightView:
     macro_tick:int
 
     tv_interval:Tuple[float, float]
-    deposit_rates:Tuple[Tuple[int, float], ...] #((term-rate), ...)
+    deposit_rates:Dict[int, float] #((term-rate), ...)

@@ -3,7 +3,7 @@ from typing import Dict, Optional, Tuple
 import sqlite3
 import json
 
-from market.global_vars import HYBRID_TIME
+from simulation_realtime_data import get_simulation_realtime_data
 from market.market_structures.economy_insight import EconomyInsight
 from market.market_structures.account import Account
 from market.market_structures.deposit import Deposit
@@ -89,7 +89,8 @@ class StorageLedger:
     
     
     def flush(self,  accounts:Tuple[Account]) -> bool:
-        if self.__last_flush_macro_tick == HYBRID_TIME.MACRO_TICK:
+        SIM_REALTIME_DATA = get_simulation_realtime_data()
+        if self.__last_flush_macro_tick == SIM_REALTIME_DATA.MACRO_TICK:
             return False
 
         cursor = self.connection.cursor()
@@ -112,7 +113,7 @@ class StorageLedger:
         self.trades = {}
         self.economy_insights = {}
         
-        self.__last_flush_macro_tick = HYBRID_TIME.MACRO_TICK
+        self.__last_flush_macro_tick = SIM_REALTIME_DATA.MACRO_TICK
         
         return True
 
@@ -290,6 +291,7 @@ class StorageLedger:
 
 
     def __record_account(self, cursor:sqlite3.Cursor, account:Account) -> None:
+        SIM_REALTIME_DATA = get_simulation_realtime_data()
         cursor.execute(
             """
             INSERT INTO accounts (
@@ -305,7 +307,7 @@ class StorageLedger:
             VALUES(?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
-                HYBRID_TIME.MACRO_TICK,
+                SIM_REALTIME_DATA.MACRO_TICK,
                 account.account_id,
                 account.agent_id,
                 account.cash,

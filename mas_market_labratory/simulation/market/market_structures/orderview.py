@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
-from market.global_vars import MarketConfig
+from simulation_configurations import get_simulation_configurations
 from market.market_structures.order import Order, OrderType, Side, OrderLifecycle, OrderEndReasons
 from market.market_structures.tradeview import TradeView
 
@@ -59,7 +59,8 @@ class OrderView:
         if self.__order.price is None:
             return None
 
-        return self.__order.price / MarketConfig.PRICE_SCALE
+        SIM_CONFIG = get_simulation_configurations()
+        return self.__order.price / SIM_CONFIG.PRICE_SCALE
     
 
     @property
@@ -82,11 +83,14 @@ class OrderView:
         if self.__order.average_trade_price is None:
             return None
 
-        return self.__order.average_trade_price / MarketConfig.PRICE_SCALE
+        SIM_CONFIG = get_simulation_configurations()
+        return self.__order.average_trade_price / SIM_CONFIG.PRICE_SCALE
 
     
     @property
     def trades(self) -> Tuple[TradeView]:
+        SIM_CONFIG = get_simulation_configurations()
+
         trade_views = []
         for trade in self.__order.trades.values():
             trade_views.append(TradeView(
@@ -94,7 +98,7 @@ class OrderView:
                 timestamp=trade.timestamp,
                 macro_tick=trade.macro_tick,
                 micro_tick=trade.micro_tick,
-                price=trade.price / MarketConfig.PRICE_SCALE,
+                price=trade.price / SIM_CONFIG.PRICE_SCALE,
                 quantity=trade.quantity
             ))
 

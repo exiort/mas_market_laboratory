@@ -5,3 +5,4 @@ sortedcontainers-stubs
 deap 
 matplotlib
 pysqlite3
+pydantic-settings

@@ -4,7 +4,7 @@ from sortedcontainers import SortedDict
 from collections import deque
 import time
 
-from market.global_vars import HYBRID_TIME
+from simulation_realtime_data import get_simulation_realtime_data
 from market.market_components.exchange_ledger import ExchangeLedger
 from market.market_components.storage_ledger import StorageLedger
 from market.market_structures.order import Order, OrderType, Side, OrderLifecycle, OrderEndReasons
@@ -292,11 +292,13 @@ class CDAEngine:
 
             trade_quantitiy = min(buyer_order.remaining_quantity, seller_order.remaining_quantity)
 
+            SIM_REALTIME_DATA = get_simulation_realtime_data()
+
             trade = Trade(
                 trade_id=self.__get_trade_id(),
                 timestamp=time.time(),
-                macro_tick=HYBRID_TIME.MACRO_TICK,
-                micro_tick=HYBRID_TIME.MICRO_TICK,
+                macro_tick=SIM_REALTIME_DATA.MACRO_TICK,
+                micro_tick=SIM_REALTIME_DATA.MICRO_TICK,
                 seller_agent_id=seller_order.agent_id,
                 sell_order_id=seller_order.order_id,
                 buyer_agent_id=buyer_order.agent_id,
@@ -401,11 +403,13 @@ class CDAEngine:
 
             trade_quantity = min(possible_shares, maker_order.remaining_quantity)
 
+            SIM_REALTIME_DATA = get_simulation_realtime_data()
+            
             trade = Trade(
                 trade_id=self.__get_trade_id(),
                 timestamp=time.time(),
-                macro_tick=HYBRID_TIME.MACRO_TICK,
-                micro_tick=HYBRID_TIME.MICRO_TICK,
+                macro_tick=SIM_REALTIME_DATA.MACRO_TICK,
+                micro_tick=SIM_REALTIME_DATA.MICRO_TICK,
                 seller_agent_id=seller_order.agent_id,
                 sell_order_id=seller_order.order_id,
                 buyer_agent_id=buyer_order.agent_id,

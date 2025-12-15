@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import List, Tuple, Optional
 import random
 
-from market.global_vars import MarketConfig
+from simulation_configurations import get_simulation_configurations
 from market.market_structures.economy_scenario import EconomyScenario
 from market.market_structures.economy_insight import EconomyInsight
 
@@ -22,8 +22,10 @@ class EconomyModule:
     __max_generated_tick:int
 
 
-    def __init__(self, scenario:EconomyScenario) -> None:
-        self.scenario = scenario
+    def __init__(self) -> None:
+        SIM_CONFIG = get_simulation_configurations()
+        
+        self.scenario = SIM_CONFIG.ECONOMY_SCENARIO
         self.rng = random.Random(self.scenario.seed)
 
         self.__tv = [self.scenario.tv_initial]
@@ -145,11 +147,12 @@ class EconomyModule:
         tv_low, tv_high = self.get_tv_interval(macro_tick)
         deposit_rates = self.get_deposit_rates(macro_tick)
 
+        SIM_CONFIG = get_simulation_configurations()
         return EconomyInsight(
             macro_tick=macro_tick,
-            true_value=int(tv * MarketConfig.PRICE_SCALE),
+            true_value=int(tv * SIM_CONFIG.PRICE_SCALE),
             short_rate=short_rate,
             width=width,
-            tv_interval=(int(tv_low * MarketConfig.PRICE_SCALE), int(tv_high * MarketConfig.PRICE_SCALE)),
-            deposit_rates=tuple(zip(self.scenario.deposit_terms, deposit_rates))
+            tv_interval=(int(tv_low * SIM_CONFIG.PRICE_SCALE), int(tv_high * SIM_CONFIG.PRICE_SCALE)),
+            deposit_rates=dict(zip(self.scenario.deposit_terms, deposit_rates))
         )
