@@ -2,6 +2,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
+from mas_market_labratory.simulation.market.market_structures.marketdataview import MarketDataView
+from mas_market_labratory.simulation.simulation_configurations import get_simulation_configurations
+
 
 
 @dataclass(frozen=True)
@@ -21,16 +24,80 @@ class MarketData:
 
     
     spread:Optional[int]
-    mid_price_x2:Optional[int]
-    microprice_x_denom:Optional[Tuple[int, int]]
+    mid_price:Optional[int]
+    micro_price:Optional[int]
     
     L2_bids:Optional[Tuple[Tuple[int, int, int], ...]] # For each price level = price - size - #of orders
     L2_asks:Optional[Tuple[Tuple[int, int, int], ...]] # For each price level = price - size #of orders
 
     N:int
-    bid_depth_N:int
-    ask_depth_N:int
-    imbalance_num_dem_N:Tuple[int, int]
-    vwrap_num_dem:Tuple[int, int]
+    bids_depth_N:int
+    asks_depth_N:int
+    imbalance_N:Optional[float]
+    vwap:Optional[int]
     
     
+    def create_view(self) -> MarketDataView:
+        SIM_CONFIG = get_simulation_configurations()
+
+        last_traded_price = None
+        if self.last_traded_price is not None:
+            last_traded_price = self.last_traded_price / SIM_CONFIG.PRICE_SCALE
+
+        L1_bids = None
+        if self.L1_bids is not  None:
+            L1_bids = (self.L1_bids[0] / SIM_CONFIG.PRICE_SCALE, self.L1_bids[1], self.L1_bids[2])
+
+        L1_asks = None
+        if self.L1_asks is not None:
+            L1_asks = (self.L1_asks[0] / SIM_CONFIG.PRICE_SCALE, self.L1_asks[1], self.L1_asks[2])
+
+        spread = None
+        if self.spread is not None:
+            spread = self.spread / SIM_CONFIG.PRICE_SCALE
+
+        mid_price = None
+        if self.mid_price is not None:
+            mid_price = self.mid_price / SIM_CONFIG.PRICE_SCALE
+
+        micro_price = None
+        if self.micro_price is not None:
+            micro_price = self.micro_price / SIM_CONFIG.PRICE_SCALE
+
+        L2_bids = None
+        if self.L2_bids is not None:
+            L2_bids = tuple((p / SIM_CONFIG.PRICE_SCALE, v, c) for p, v, c in self.L2_bids)
+
+        L2_asks = None
+        if self.L2_asks is not None:
+            L2_asks = tuple((p / SIM_CONFIG.PRICE_SCALE, v, c) for p, v, c in self.L2_asks)
+
+        imbalance_N = None
+        if self.imbalance_N is not None:
+            imbalance_N = self.imbalance_N / SIM_CONFIG.PRICE_SCALE
+
+        vwap = None
+        if self.vwap is not None:
+            vwap = self.vwap / SIM_CONFIG.PRICE_SCALE
+
+        return MarketDataView(
+            timestamp=self.timestamp,
+            macro_tick=self.macro_tick,
+            micro_tick=self.micro_tick,
+            trade_count=self.trade_count,
+            trade_volume=self.trade_volume,
+            last_traded_price=last_traded_price,
+            last_trade_size=self.last_trade_size,
+            L1_bids=L1_bids,
+            L1_asks=L1_asks,
+            spread=spread,
+            mid_price=mid_price,
+            micro_price=micro_price,
+            L2_bids=L2_bids,
+            L2_asks=L2_asks,
+            N=self.N,
+            bids_depth_N=self.bids_depth_N,
+            asks_depth_N=self.asks_depth_N,
+            imbalance_N=imbalance_N,
+            vwap=vwap
+        )

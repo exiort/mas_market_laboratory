@@ -4,12 +4,10 @@ from typing import Dict, List, Optional
 import math
 import time
 
-from mas_market_labratory.simulation.market.market_structures.depositview import DepositView
 from storage_ledger import StorageLedger
 from simulation_configurations import get_simulation_configurations
 from simulation_realtime_data import get_simulation_realtime_data
 from market.market_structures.account import Account
-from market.market_structures.accountview import AccountView
 from market.market_structures.order import Order, OrderLifecycle, OrderEndReasons, OrderType, Side
 from market.market_structures.trade import Trade
 from market.market_structures.deposit import Deposit
@@ -32,28 +30,31 @@ class ExchangeLedger:
 
         self.storage_ledger = storage_ledger
 
-        
-    def __get_account_id(self) -> int:
+
+    @property
+    def account_id(self) -> int:
         account_id = self.__next_account_id
         self.__next_account_id += 1
 
         return account_id
 
+    
     @property
     def deposit_id(self) -> int:
         deposit_id = self.__next_deposit_id
         self.__next_deposit_id += 1
 
         return deposit_id
+
     
-    def register_account(self, agent_id:int, initial_cash:float=0.0, initial_shares:int=0) -> AccountView:
+    def register_account(self, agent_id:int, initial_cash:float=0.0, initial_shares:int=0) -> Account:
         assert agent_id not in self.accounts
         assert initial_cash >= 0
         assert initial_shares >= 0
 
         SIM_CONFIG = get_simulation_configurations()
         account = Account(
-            self.__get_account_id(),
+            self.account_id,
             agent_id,
             int(initial_cash * SIM_CONFIG.PRICE_SCALE),
             initial_shares
@@ -61,7 +62,7 @@ class ExchangeLedger:
 
         self.accounts[agent_id] = account
 
-        return account.create_view()
+        return account
 
 
     def is_account_exist(self, agent_id:int) -> bool:
@@ -305,7 +306,7 @@ class ExchangeLedger:
         order.average_trade_price = int(price_sum / total_quantity)
 
 
-    def create_deposit(self, agent_id:int, term:int, deposit_cash:float) -> Optional[DepositView]:
+    def create_deposit(self, agent_id:int, term:int, deposit_cash:float) -> Optional[Deposit]:
         assert self.is_account_exist(agent_id)
 
         SIM_CONFIG = get_simulation_configurations()
@@ -331,15 +332,13 @@ class ExchangeLedger:
         is_account_available = self.check_and_reverse_deposit(deposit)
         if not is_account_available:
             return
-
-        self.storage_ledger.add_deposit(deposit)
         
         if deposit.maturity_macro_tick not in self.open_deposits:
             self.open_deposits[deposit.maturity_macro_tick] = [deposit]
         else:
             self.open_deposits[deposit.maturity_macro_tick].append(deposit)
 
-        return deposit.create_view()
+        return deposit
         
 
     def check_and_reverse_deposit(self, deposit:Deposit) -> bool:

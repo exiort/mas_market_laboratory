@@ -16,7 +16,8 @@ class SimulationConfigurations(BaseSettings):
 
     model_config = SettingsConfigDict(frozen=True)
 
-
+    L2_DEPTH:int
+    
 __SIMULATION_CONFIGURATION:Optional[SimulationConfigurations] = None
 
 

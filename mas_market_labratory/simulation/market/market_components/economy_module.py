@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import List, Tuple, Optional
 import random
 
+from mas_market_labratory.simulation.simulation_realtime_data import get_simulation_realtime_data
 from simulation_configurations import get_simulation_configurations
 from market.market_structures.economy_scenario import EconomyScenario
 from market.market_structures.economy_insight import EconomyInsight
@@ -140,16 +141,18 @@ class EconomyModule:
         return tuple(max(0.0, r_t + s.term_curve_slope * x + s.term_curve_curvature * x * x) for x in s.deposit_terms) 
 
 
-    def get_economy_insight(self, macro_tick:int) -> EconomyInsight:
-        tv = self.get_true_value(macro_tick)
-        short_rate = self.get_short_rate(macro_tick)
-        width = self.get_width(macro_tick)
-        tv_low, tv_high = self.get_tv_interval(macro_tick)
-        deposit_rates = self.get_deposit_rates(macro_tick)
-
+    def get_economy_insight(self) -> EconomyInsight:
         SIM_CONFIG = get_simulation_configurations()
+        SIM_REALTIME_DATA = get_simulation_realtime_data()
+        
+        tv = self.get_true_value(SIM_REALTIME_DATA.MACRO_TICK)
+        short_rate = self.get_short_rate(SIM_REALTIME_DATA.MACRO_TICK)
+        width = self.get_width(SIM_REALTIME_DATA.MACRO_TICK)
+        tv_low, tv_high = self.get_tv_interval(SIM_REALTIME_DATA.MACRO_TICK)
+        deposit_rates = self.get_deposit_rates(SIM_REALTIME_DATA.MACRO_TICK)
+
         return EconomyInsight(
-            macro_tick=macro_tick,
+            macro_tick=SIM_REALTIME_DATA.MACRO_TICK,
             true_value=int(tv * SIM_CONFIG.PRICE_SCALE),
             short_rate=short_rate,
             width=width,

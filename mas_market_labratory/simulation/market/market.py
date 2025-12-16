@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional
 import time
 
+from mas_market_labratory.simulation.market.market_structures.marketdataview import MarketDataView
 from simulation_configurations import get_simulation_configurations
 from simulation_realtime_data import get_simulation_realtime_data
 from market.market_components.economy_module import EconomyModule
@@ -36,7 +37,8 @@ class Market:
         self._next_order_id = 0
         
 
-    def __get_order_id(self) -> int:
+    @property
+    def order_id(self) -> int:
         order_id = self.__next_order_id
         self.__next_order_id += 1
 
@@ -53,11 +55,15 @@ class Market:
         if initial_cash < 0: return
         if initial_shares < 0: return
 
-        return self.exchange_ledger.register_account(
+        account = self.exchange_ledger.register_account(
             agent_id=agent_id,
             initial_cash=initial_cash,
             initial_shares=initial_shares
         )
+
+        assert self.storage_ledger.add_account(account)
+
+        return account.create_view()
         
     
     def create_order(
@@ -87,7 +93,7 @@ class Market:
 
         SIM_REALTIME_DATA = get_simulation_realtime_data()
         order = Order(
-            order_id=self.__get_order_id(),
+            order_id=self.order_id,
             agent_id=agent_id,
             timestamp=time.time(),
             macro_tick=SIM_REALTIME_DATA.MACRO_TICK,
@@ -100,8 +106,7 @@ class Market:
             end_reason=OrderEndReasons.NONE
         )
 
-        if not self.storage_ledger.add_order(order):
-            return
+        assert self.storage_ledger.add_order(order)
         
         self.cda_engine.process_new_order(order)
         
@@ -143,15 +148,30 @@ class Market:
         
         if not deposited_cash > 0:
             return
-        
+
+        deposit = self.exchange_ledger.create_deposit(
+            agent_id=agent_id,
+            term=term,
+            deposit_cash=deposited_cash,
+        )
+
+        if deposit is None: return
+
+        assert self.storage_ledger.add_deposit(deposit)
+
+        return deposit.create_view()
         
     def get_economy_insight(self) -> EconomyInsightView:
-        SIM_REALTIME_DATA = get_simulation_realtime_data()
-        economy_insight = self.economy_module.get_economy_insight(SIM_REALTIME_DATA.MACRO_TICK)
+        economy_insight = self.economy_module.get_economy_insight()
 
-        if not self.storage_ledger.add_economy_insight(economy_insight):
-            economy_insight = self.storage_ledger.get_economy_insight(SIM_REALTIME_DATA.MACRO_TICK)
-            assert economy_insight
+        assert self.storage_ledger.add_economy_insight(economy_insight)
 
         return economy_insight.create_view()
         
+
+    def get_market_data(self) -> MarketDataView:
+        market_data = self.cda_engine.get_market_data()
+
+        assert self.storage_ledger.add_market_data(market_data)
+        
+        return market_data.create_view()

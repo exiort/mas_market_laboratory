@@ -1,9 +1,11 @@
 from __future__ import annotations
-from typing import Callable, Dict, Optional, Tuple, Deque
+from typing import Callable, Dict, List, Optional, Tuple, Deque
 from sortedcontainers import SortedDict
 from collections import deque
 import time
 
+from mas_market_labratory.simulation.market.market_structures.marketdata import MarketData
+from mas_market_labratory.simulation.simulation_configurations import get_simulation_configurations
 from simulation_realtime_data import get_simulation_realtime_data
 from market.market_components.exchange_ledger import ExchangeLedger
 from market.market_components.storage_ledger import StorageLedger
@@ -160,6 +162,68 @@ class OrderBook:
 
         return self.asks.peekitem(0)[1][0]
 
+
+    def get_l1_bids(self) -> Optional[Tuple[int, int, int]]:
+        price = self.get_best_bid_price()
+        if price is None:
+            return
+
+        bid_queue = self.bids[price]
+
+        number_of_bids = len(bid_queue)
+        bid_size = 0
+        for bid in bid_queue:
+            bid_size += bid.quantity
+
+        return price, bid_size, number_of_bids
+
+
+    def get_l1_asks(self) -> Optional[Tuple[int, int, int]]:
+        price = self.get_best_bid_price()
+        if price is None:
+            return
+
+        ask_queue = self.asks[price]
+
+        number_of_asks = len(ask_queue)
+        ask_size = 0
+        for ask in ask_queue:
+            ask_size += ask.quantity
+
+        return price, ask_size, number_of_asks
+
+
+    def get_l2_bids(self) -> Optional[Tuple[Tuple[int, int, int], ...]]:
+        if not self.bids:
+            return
+
+        bid_level_data = []
+        for price, bid_queue in self.bids.items():
+            number_of_bids = len(bid_queue)
+            bid_size = 0
+            for bid in bid_queue:
+                bid_size += bid.quantity
+                
+            bid_level_data.append((price, bid_size, number_of_bids))
+
+        return tuple(bid_level_data)
+
+    
+    def get_l2_asks(self) -> Optional[Tuple[Tuple[int, int, int], ...]]:
+        if not self.asks:
+            return
+
+        ask_level_data = []
+        for price, ask_queue in self.asks.items():
+            number_of_asks = len(ask_queue)
+            ask_size = 0
+            for ask in ask_queue:
+                ask_size += ask.quantity
+
+            ask_level_data.append((price, ask_size, number_of_asks))
+
+        return tuple(ask_level_data)
+
     
 class CDAEngine:
     order_book:OrderBook
@@ -167,6 +231,9 @@ class CDAEngine:
     exchange_ledger:ExchangeLedger
 
     __next_trade_id:int
+
+    __trades:List[Tuple[int, int]] #price - volume
+
     
     def __init__(self, storage_ledger:StorageLedger, exchange_ledger:ExchangeLedger) -> None:
         self.storage_ledger = storage_ledger
@@ -176,8 +243,11 @@ class CDAEngine:
 
         self.__next_trade_id = 0
 
-        
-    def __get_trade_id(self) -> int:
+        self.__trades = []
+
+
+    @property
+    def trade_id(self) -> int:
         trade_id = self.__next_trade_id 
         self.__next_trade_id += 1
 
@@ -295,7 +365,7 @@ class CDAEngine:
             SIM_REALTIME_DATA = get_simulation_realtime_data()
 
             trade = Trade(
-                trade_id=self.__get_trade_id(),
+                trade_id=self.trade_id,
                 timestamp=time.time(),
                 macro_tick=SIM_REALTIME_DATA.MACRO_TICK,
                 micro_tick=SIM_REALTIME_DATA.MICRO_TICK,
@@ -406,7 +476,7 @@ class CDAEngine:
             SIM_REALTIME_DATA = get_simulation_realtime_data()
             
             trade = Trade(
-                trade_id=self.__get_trade_id(),
+                trade_id=self.trade_id,
                 timestamp=time.time(),
                 macro_tick=SIM_REALTIME_DATA.MACRO_TICK,
                 micro_tick=SIM_REALTIME_DATA.MICRO_TICK,
@@ -446,6 +516,8 @@ class CDAEngine:
     def __execute_trade(self, buyer_order:Order, seller_order:Order, trade:Trade) -> None:
         self.exchange_ledger.settle_trade(buyer_order, seller_order, trade)
         self.storage_ledger.add_trade(trade)
+
+        self.__trades.append((trade.price, trade.quantity))
         
     
     def cancel_order(self, order_id:int) -> None:
@@ -499,3 +571,85 @@ class CDAEngine:
             self.exchange_ledger.release_shares(ask)
             ask.lifecycle = OrderLifecycle.DONE
             ask.end_reason = OrderEndReasons.EXPIRED
+            
+            
+    def get_market_data(self) -> MarketData:
+        SIM_REALTIME_DATA = get_simulation_realtime_data()
+        SIM_CONFIG = get_simulation_configurations()
+        
+        l1_bids = self.order_book.get_l1_bids()
+        l1_asks = self.order_book.get_l1_asks()
+
+        if l1_bids is not None and l1_asks is not None:
+            spread = l1_asks[0] - l1_bids[0]
+            mid_price = int((l1_asks[0] + l1_bids[0]) / 2)
+            micro_price = int((l1_asks[0] * l1_bids[1] + l1_bids[0] * l1_asks[1]) / (l1_bids[1] + l1_asks[1]))
+            
+        else:
+            spread = None
+            mid_price = None
+            micro_price= None
+
+
+        l2_bids = self.order_book.get_l2_bids()
+        l2_asks = self.order_book.get_l2_asks()
+
+        N = SIM_CONFIG.L2_DEPTH
+
+        bids_depth_N = 0
+        if l2_bids is not None:
+            for i in range(min(N, len(l2_bids))):
+                bids_depth_N += l2_bids[i][1]
+
+        asks_depth_N = 0
+        if l2_asks is not None:
+            for i in range(min(N, len(l2_asks))):
+                asks_depth_N += l2_asks[i][1]
+        
+        if bids_depth_N == asks_depth_N == 0:
+            imbalance_N = None
+        else:
+            imbalance_N = (bids_depth_N - asks_depth_N) / (bids_depth_N + asks_depth_N) 
+
+        trade_count = len(self.__trades)
+        trade_volume = 0
+
+        if trade_count == 0:
+            last_traded_price = None
+            last_trade_volume = None
+            vwap = None
+
+        last_traded_price = self.__trades[-1][0]
+        last_trade_volume = self.__trades[-1][1]
+        
+        vwap_num = 0
+        for trade in self.__trades:
+            trade_volume += trade[1]
+            vwap_num += trade[0] * trade[1]
+
+        vwap = int(vwap_num / trade_volume)
+
+        self.__trades.clear()
+        
+        return MarketData(
+            timestamp=time.time(),
+            macro_tick=SIM_REALTIME_DATA.MACRO_TICK,
+            micro_tick=SIM_REALTIME_DATA.MICRO_TICK,
+            trade_count=trade_count,
+            trade_volume=trade_volume,
+            last_traded_price=last_traded_price,
+            last_trade_size=last_trade_volume,
+            L1_bids=l1_bids,
+            L1_asks=l1_asks,
+            spread=spread,
+            mid_price=mid_price,
+            micro_price=micro_price,
+            L2_bids=l2_bids,
+            L2_asks=l2_asks,
+            N=N,
+            bids_depth_N=bids_depth_N,
+            asks_depth_N=asks_depth_N,
+            imbalance_N=imbalance_N,
+            vwap=vwap
+        )
+

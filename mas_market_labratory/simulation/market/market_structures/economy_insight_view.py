@@ -10,3 +10,4 @@ class EconomyInsightView:
 
     tv_interval:Tuple[float, float]
     deposit_rates:Dict[int, float] #((term-rate), ...)
+    
