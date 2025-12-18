@@ -220,15 +220,15 @@ class SettlementLedger:
         assert order.remaining_quantity == account.reserved_shares[order.order_id] #9
 
         reserved_quantity = account.reserved_shares[order.order_id]
-        released_quantitiy = traded_quantity if traded_quantity is not None else reserved_quantity
-        assert released_quantitiy <= reserved_quantity #10
+        released_quantity = traded_quantity if traded_quantity is not None else reserved_quantity
+        assert released_quantity <= reserved_quantity #10
         
-        account.reserved_shares[order.order_id] = reserved_quantity - released_quantitiy
+        account.reserved_shares[order.order_id] = reserved_quantity - released_quantity
 
         if account.reserved_shares[order.order_id] == 0:
             del account.reserved_shares[order.order_id]
 
-        account.shares += released_quantitiy
+        account.shares += released_quantity
 
         
     def settle_trade(self, buyer_order:Order, seller_order:Order, trade:Trade) -> None:
@@ -290,11 +290,11 @@ class SettlementLedger:
         buyer_order.trades[trade.trade_id] = trade
         seller_order.trades[trade.trade_id] = trade
 
-        self.__update_avarage_trade_price(buyer_order)
-        self.__update_avarage_trade_price(seller_order)
+        self.__update_average_trade_price(buyer_order)
+        self.__update_average_trade_price(seller_order)
 
         
-    def __update_avarage_trade_price(self, order:Order):
+    def __update_average_trade_price(self, order:Order):
         if not order.trades:
             return
 
@@ -332,7 +332,7 @@ class SettlementLedger:
             matured_cash=int(deposit_cash * (1 + interest_rate))
         )
 
-        is_account_available = self.check_and_reverse_deposit(deposit)
+        is_account_available = self.check_and_reserve_deposit(deposit)
         if not is_account_available:
             return
         
@@ -344,7 +344,7 @@ class SettlementLedger:
         return deposit
         
 
-    def check_and_reverse_deposit(self, deposit:Deposit) -> bool:
+    def check_and_reserve_deposit(self, deposit:Deposit) -> bool:
         account = self.accounts.get(deposit.agent_id)
         assert account is not None
 

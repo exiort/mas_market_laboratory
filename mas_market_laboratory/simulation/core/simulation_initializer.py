@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List
 
-from environment.configs.environment_configuration import EnvironmentConfiguation, EconomyScenario
+from environment.configs.environment_configuration import EnvironmentConfiguration, EconomyScenario
 from environment.configs import set_environment_configuration
 from environment.views.economy_insight_view import EconomyInsightView
 from environment.views.market_data_view import MarketDataView
@@ -88,7 +88,7 @@ class SimulationInitializer:
         assert isinstance(insight_l2_depth, int)
         
         set_environment_configuration(
-            EnvironmentConfiguation(
+            EnvironmentConfiguration(
                 PRICE_SCALE=price_scale,
                 DB_PATH=db_path,
                 INSIGHT_L2_DEPTH=insight_l2_depth,

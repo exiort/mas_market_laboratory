@@ -91,7 +91,7 @@ class OrderView:
 
     
     @property
-    def trades(self) -> Tuple[TradeView]:
+    def trades(self) -> Tuple[TradeView, ...]:
         trade_views = []
         for trade in self.__order.trades.values():
             trade_views.append(trade.create_view())

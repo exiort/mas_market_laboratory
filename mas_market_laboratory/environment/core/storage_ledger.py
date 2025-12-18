@@ -406,7 +406,7 @@ class StorageLedger:
     def __record_economy_insight(self, cursor:sqlite3.Cursor, economy_insight:EconomyInsight) -> None:
         cursor.execute(
             """
-            INSERT INTO economy_insight (
+            INSERT INTO economy_insights (
             macro_tick,
             true_value,
             short_rate,

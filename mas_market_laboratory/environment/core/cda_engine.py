@@ -180,7 +180,7 @@ class OrderBook:
 
 
     def get_l1_asks(self) -> Optional[Tuple[int, int, int]]:
-        price = self.get_best_bid_price()
+        price = self.get_best_ask_price()
         if price is None:
             return
 
@@ -261,7 +261,7 @@ class CDAEngine:
         # 2-If Limit -> price != None && price > 0
         # 3-If Market -> price = None
         # 4-quantity > 0
-        # 5-remaining_quantitiy = quantity
+        # 5-remaining_quantity = quantity
         # 6-lifecycle = NEW
         # 7-end_reason = NONE
         # 8-average_trade_price = None
@@ -361,7 +361,7 @@ class CDAEngine:
             else:
                 assert False
 
-            trade_quantitiy = min(buyer_order.remaining_quantity, seller_order.remaining_quantity)
+            trade_quantity = min(buyer_order.remaining_quantity, seller_order.remaining_quantity)
 
             SIM_REALTIME_DATA = get_simulation_realtime_data()
 
@@ -375,7 +375,7 @@ class CDAEngine:
                 buyer_agent_id=buyer_order.agent_id,
                 buy_order_id=buyer_order.order_id,
                 price=trade_price,
-                quantity=trade_quantitiy
+                quantity=trade_quantity
             )
 
             self.__execute_trade(buyer_order, seller_order, trade)

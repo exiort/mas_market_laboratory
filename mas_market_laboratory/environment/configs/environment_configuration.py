@@ -6,7 +6,7 @@ from .models import EconomyScenario
 
 
 
-class EnvironmentConfiguation(BaseSettings):
+class EnvironmentConfiguration(BaseSettings):
     PRICE_SCALE:int
     DB_PATH:str
     
@@ -16,15 +16,15 @@ class EnvironmentConfiguation(BaseSettings):
     model_config = SettingsConfigDict(frozen=True)
 
 
-__ENVIRONMENT_CONFIGURATION:Optional[EnvironmentConfiguation] = None
+__ENVIRONMENT_CONFIGURATION:Optional[EnvironmentConfiguration] = None
 
 
-def set_environment_configuration(environment_configuration:EnvironmentConfiguation) -> None:
+def set_environment_configuration(environment_configuration:EnvironmentConfiguration) -> None:
     global __ENVIRONMENT_CONFIGURATION
     __ENVIRONMENT_CONFIGURATION = environment_configuration
 
 
-def get_environment_configuration() -> EnvironmentConfiguation:
+def get_environment_configuration() -> EnvironmentConfiguration:
     assert __ENVIRONMENT_CONFIGURATION is not None
 
     return __ENVIRONMENT_CONFIGURATION
