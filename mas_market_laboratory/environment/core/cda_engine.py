@@ -174,7 +174,7 @@ class OrderBook:
         number_of_bids = len(bid_queue)
         bid_size = 0
         for bid in bid_queue:
-            bid_size += bid.quantity
+            bid_size += bid.remaining_quantity
 
         return price, bid_size, number_of_bids
 
@@ -189,7 +189,7 @@ class OrderBook:
         number_of_asks = len(ask_queue)
         ask_size = 0
         for ask in ask_queue:
-            ask_size += ask.quantity
+            ask_size += ask.remaining_quantity
 
         return price, ask_size, number_of_asks
 
@@ -203,7 +203,7 @@ class OrderBook:
             number_of_bids = len(bid_queue)
             bid_size = 0
             for bid in bid_queue:
-                bid_size += bid.quantity
+                bid_size += bid.remaining_quantity
                 
             bid_level_data.append((price, bid_size, number_of_bids))
 
@@ -219,7 +219,7 @@ class OrderBook:
             number_of_asks = len(ask_queue)
             ask_size = 0
             for ask in ask_queue:
-                ask_size += ask.quantity
+                ask_size += ask.remaining_quantity
 
             ask_level_data.append((price, ask_size, number_of_asks))
 
