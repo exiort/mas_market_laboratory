@@ -1,8 +1,10 @@
 from __future__ import annotations
-from typing import Dict, Tuple
+from typing import TYPE_CHECKING, Dict, Tuple
 
 from environment.configs import get_environment_configuration
-from environment.models import Account
+
+if TYPE_CHECKING:
+    from environment.models import Account
 
 
 

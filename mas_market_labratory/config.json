@@ -1,5 +1,5 @@
 {
-    "simulation_config" : {
+    "simulation_config":{
 	"simulation_macro_tick": 20,
 	"simulation_micro_tick": 30,
 	"init_macro_tick": 0,
@@ -8,7 +8,7 @@
     
     "environment_config" : {
 	"price_scale": 10000,
-	"db_path": "mas_market_labratory/data/",
+	"db_path": "data/sim.db",
 	"insight_l2_depth": 10,
 	"economy_scenario_seed": 1923,
 	"economy_scenario_tv_initial": 100.0,

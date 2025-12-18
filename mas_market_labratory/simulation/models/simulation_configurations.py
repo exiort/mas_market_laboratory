@@ -17,6 +17,11 @@ class SimulationConfigurations(BaseSettings):
 __SIMULATION_CONFIGURATION:Optional[SimulationConfigurations] = None
 
 
+def set_simulation_configuration(simulation_configuration:SimulationConfigurations) -> None:
+    global __SIMULATION_CONFIGURATION
+    __SIMULATION_CONFIGURATION = simulation_configuration
+
+
 def get_simulation_configurations() -> SimulationConfigurations:
     assert __SIMULATION_CONFIGURATION is not None
 

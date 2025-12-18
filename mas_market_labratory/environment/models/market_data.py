@@ -22,7 +22,6 @@ class MarketData:
     L1_bids:Optional[Tuple[int, int, int]] #price - size - #of orders
     L1_asks:Optional[Tuple[int, int, int]] #price - size - #of orders
 
-    
     spread:Optional[int]
     mid_price:Optional[int]
     micro_price:Optional[int]

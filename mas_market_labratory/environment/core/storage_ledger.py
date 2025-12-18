@@ -5,8 +5,8 @@ import json
 
 from environment.models import Account, Deposit, EconomyInsight, MarketData, Order, Trade 
 from environment.configs import get_environment_configuration
-from simulation import get_simulation_realtime_data
 
+from simulation import get_simulation_realtime_data
 
 
 
@@ -298,7 +298,7 @@ class StorageLedger:
             bids_depth_N INTEGER NOT NULL,
             asks_depth_N INTEGER NOT NULL,
             imbalance_N REAL,
-            vwap INTEGER,
+            vwap INTEGER
             );
             """
         )

@@ -2,11 +2,12 @@ from __future__ import annotations
 from typing import Optional
 import time
 
-from simulation import get_simulation_configurations, get_simulation_realtime_data
 from environment.configs import get_environment_configuration
 from environment.core import CDAEngine, EconomyModule, SettlementLedger, StorageLedger
 from environment.models.order import Order, OrderLifecycle, OrderEndReasons, Side, OrderType
 from environment.views import AccountView, DepositView, MarketDataView, OrderView, EconomyInsightView
+
+from simulation import get_simulation_configurations, get_simulation_realtime_data
 
 
 

@@ -1,10 +1,13 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from environment.configs import get_environment_configuration
-from environment.models.order import Order, OrderType, Side, OrderLifecycle, OrderEndReasons
-from environment.views import TradeView
+
+from .trade_view import TradeView
+
+if TYPE_CHECKING:
+    from environment.models.order import Order, OrderType, Side, OrderLifecycle, OrderEndReasons
 
     
 
@@ -89,17 +92,8 @@ class OrderView:
     
     @property
     def trades(self) -> Tuple[TradeView]:
-        ENV_CONFIG = get_environment_configuration()
-
         trade_views = []
         for trade in self.__order.trades.values():
-            trade_views.append(TradeView(
-                trade_id=trade.trade_id,
-                timestamp=trade.timestamp,
-                macro_tick=trade.macro_tick,
-                micro_tick=trade.micro_tick,
-                price=trade.price / ENV_CONFIG.PRICE_SCALE,
-                quantity=trade.quantity
-            ))
+            trade_views.append(trade.create_view())
 
         return tuple(trade_views)

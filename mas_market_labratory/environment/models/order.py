@@ -3,8 +3,9 @@ from typing import Optional, Dict
 from enum import Enum, auto
 from dataclasses import dataclass, field
 
-from environment.models import Trade
 from environment.views import OrderView
+
+from .trade import Trade
 
 
 

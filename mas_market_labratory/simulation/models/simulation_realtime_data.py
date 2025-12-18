@@ -81,6 +81,11 @@ class SimulationRealTimeData:
 __SIMULATION_REALTIME_DATA:Optional[SimulationRealTimeData] = None
 
 
+def set_simulation_realtime_data(simulation_realtime_data:SimulationRealTimeData) -> None:
+    global __SIMULATION_REALTIME_DATA
+    __SIMULATION_REALTIME_DATA = simulation_realtime_data
+
+
 def get_simulation_realtime_data() -> SimulationRealTimeData:
     assert __SIMULATION_REALTIME_DATA is not None
 

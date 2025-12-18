@@ -2,7 +2,7 @@ import sys
 
 from environment import Environment
 
-#from simulation.simulation_realtime_data import __SIMULATION_REALTIME_DATA, SimulationRealTimeData
+from simulation.core import SimulationInitializer
 
 
 
@@ -16,6 +16,9 @@ def main():
         return
         
 
+    SimulationInitializer.INITIALIZE_CONFIGS(sys.argv[1])
+    environment = Environment()
 
+    
 if __name__ == "__main__":
     main()

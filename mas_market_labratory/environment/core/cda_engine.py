@@ -4,11 +4,14 @@ from sortedcontainers import SortedDict
 from collections import deque
 import time
 
-from environment.core import SettlementLedger, StorageLedger
 from environment.models import Order, Trade, MarketData 
 from environment.models.order import OrderType, Side, OrderLifecycle, OrderEndReasons
 from environment.configs import get_environment_configuration
+
 from simulation.models import get_simulation_realtime_data 
+
+from .settlement_ledger import SettlementLedger
+from .storage_ledger import StorageLedger
 
 
 
@@ -616,16 +619,16 @@ class CDAEngine:
             last_traded_price = None
             last_trade_volume = None
             vwap = None
-
-        last_traded_price = self.__trades[-1][0]
-        last_trade_volume = self.__trades[-1][1]
+        else:
+            last_traded_price = self.__trades[-1][0]
+            last_trade_volume = self.__trades[-1][1]
         
-        vwap_num = 0
-        for trade in self.__trades:
-            trade_volume += trade[1]
-            vwap_num += trade[0] * trade[1]
+            vwap_num = 0
+            for trade in self.__trades:
+                trade_volume += trade[1]
+                vwap_num += trade[0] * trade[1]
 
-        vwap = int(vwap_num / trade_volume)
+            vwap = int(vwap_num / trade_volume)
 
         self.__trades.clear()
         

@@ -20,10 +20,6 @@ class Account:
     deposited_cash:Dict[int, int] = field(default_factory=dict) #DepositID -> depositted
     
 
-    def create_view(self) -> AccountView:
-        return AccountView(self)
-
-
     def get_total_reserved_cash(self) -> int:
         if not self.reserved_cash:
             return 0
@@ -55,3 +51,7 @@ class Account:
             total += deposited
 
         return total            
+
+    
+    def create_view(self) -> AccountView:
+        return AccountView(self)
