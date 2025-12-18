@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import Dict, Tuple
 
-from simulation_configurations import get_simulation_configurations
-from market.market_structures.account import Account
+from environment.configs import get_environment_configuration
+from environment.models import Account
 
 
 
@@ -20,8 +20,8 @@ class AccountView:
 
 
     def cash(self) -> float:
-        SIM_CONFIG = get_simulation_configurations()
-        return self.__account.cash / SIM_CONFIG.PRICE_SCALE
+        ENV_CONFIG = get_environment_configuration()
+        return self.__account.cash / ENV_CONFIG.PRICE_SCALE
 
 
     def shares(self) -> int:

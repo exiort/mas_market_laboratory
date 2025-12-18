@@ -2,23 +2,16 @@ from __future__ import annotations
 from typing import Optional
 import time
 
-from mas_market_labratory.simulation.market.market_structures.marketdataview import MarketDataView
-from simulation_configurations import get_simulation_configurations
-from simulation_realtime_data import get_simulation_realtime_data
-from market.market_components.economy_module import EconomyModule
-from market.market_components.exchange_ledger import ExchangeLedger
-from market.market_components.cda_engine import CDAEngine
-from market.market_components.storage_ledger import StorageLedger
-from market.market_structures.accountview import AccountView
-from market.market_structures.depositview import DepositView
-from market.market_structures.economy_insight_view import EconomyInsightView
-from market.market_structures.order import Order, OrderLifecycle, OrderEndReasons, Side, OrderType
-from market.market_structures.orderview import OrderView
+from simulation import get_simulation_configurations, get_simulation_realtime_data
+from environment.configs import get_environment_configuration
+from environment.core import CDAEngine, EconomyModule, SettlementLedger, StorageLedger
+from environment.models.order import Order, OrderLifecycle, OrderEndReasons, Side, OrderType
+from environment.views import AccountView, DepositView, MarketDataView, OrderView, EconomyInsightView
 
 
 
-class Market:
-    exchange_ledger:ExchangeLedger
+class Environment:
+    settlement_ledger:SettlementLedger
     cda_engine:CDAEngine
     storage_ledger:StorageLedger
     economy_module:EconomyModule
@@ -26,11 +19,11 @@ class Market:
     __next_order_id:int
     
     def __init__(self) -> None:      
-        self.storage_ledger = StorageLedger("")
-        self.exchange_ledger = ExchangeLedger(self.storage_ledger)
+        self.storage_ledger = StorageLedger()
+        self.settlement_ledger = SettlementLedger(self.storage_ledger)
         self.cda_engine = CDAEngine(
             storage_ledger=self.storage_ledger,
-            exchange_ledger=self.exchange_ledger
+            settlement_ledger=self.settlement_ledger
         )
 
         self.economy_module = EconomyModule()        
@@ -51,11 +44,11 @@ class Market:
             initial_cash:float=0.0,
             initial_shares:int=0
     ) -> Optional[AccountView]:
-        if self.exchange_ledger.is_account_exist(agent_id): return
+        if self.settlement_ledger.is_account_exist(agent_id): return
         if initial_cash < 0: return
         if initial_shares < 0: return
 
-        account = self.exchange_ledger.register_account(
+        account = self.settlement_ledger.register_account(
             agent_id=agent_id,
             initial_cash=initial_cash,
             initial_shares=initial_shares
@@ -74,18 +67,18 @@ class Market:
             quantity:int,
             price:Optional[float]=None
     ) -> Optional[OrderView]:
-        if not self.exchange_ledger.is_account_exist(agent_id):
+        if not self.settlement_ledger.is_account_exist(agent_id):
             return
 
         if not quantity > 0:
             return
 
-        SIM_CONFIG = get_simulation_configurations()
+        ENV_CONFIG = get_environment_configuration()
         
         if order_type == OrderType.LIMIT:
             if price is None or price <= 0:
                 return
-            price = int(price * SIM_CONFIG.PRICE_SCALE)
+            price = int(price * ENV_CONFIG.PRICE_SCALE)
             
         elif order_type == OrderType.MARKET:
             if price is not None:
@@ -114,7 +107,7 @@ class Market:
 
 
     def cancel_order(self, agent_id:int, order_id:int) -> None:
-        if not self.exchange_ledger.is_account_exist(agent_id): return
+        if not self.settlement_ledger.is_account_exist(agent_id): return
 
         order = self.storage_ledger.get_order(order_id)
         if order is None: return
@@ -135,11 +128,12 @@ class Market:
             term:int,
             deposited_cash:float
     ) -> Optional[DepositView]:
-        if not self.exchange_ledger.is_account_exist(agent_id):
+        if not self.settlement_ledger.is_account_exist(agent_id):
             return
 
         SIM_CONFIG = get_simulation_configurations()
-        if not term in SIM_CONFIG.ECONOMY_SCENARIO.deposit_terms:
+        ENV_CONFIG = get_environment_configuration()
+        if not term in ENV_CONFIG.ECONOMY_SCENARIO.deposit_terms:
             return
 
         SIM_REALTIME_DATA = get_simulation_realtime_data()
@@ -149,7 +143,7 @@ class Market:
         if not deposited_cash > 0:
             return
 
-        deposit = self.exchange_ledger.create_deposit(
+        deposit = self.settlement_ledger.create_deposit(
             agent_id=agent_id,
             term=term,
             deposit_cash=deposited_cash,
@@ -160,7 +154,8 @@ class Market:
         assert self.storage_ledger.add_deposit(deposit)
 
         return deposit.create_view()
-        
+
+    
     def get_economy_insight(self) -> EconomyInsightView:
         economy_insight = self.economy_module.get_economy_insight()
 

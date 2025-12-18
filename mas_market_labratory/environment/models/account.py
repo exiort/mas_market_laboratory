@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Dict, Tuple
 from dataclasses import dataclass, field
 
-from market.market_structures.accountview import AccountView
+from environment.views import AccountView
 
 
 

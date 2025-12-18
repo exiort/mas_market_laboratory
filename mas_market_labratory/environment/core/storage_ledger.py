@@ -3,13 +3,9 @@ from typing import Dict, Optional, Tuple
 import sqlite3
 import json
 
-from simulation_realtime_data import get_simulation_realtime_data
-from market.market_structures.economy_insight import EconomyInsight
-from market_structures.marketdata import MarketData
-from market.market_structures.account import Account
-from market.market_structures.deposit import Deposit
-from market.market_structures.order import Order
-from market.market_structures.trade import Trade
+from environment.models import Account, Deposit, EconomyInsight, MarketData, Order, Trade 
+from environment.configs import get_environment_configuration
+from simulation import get_simulation_realtime_data
 
 
 
@@ -28,7 +24,7 @@ class StorageLedger:
     __last_flush_macro_tick:int
     
     
-    def __init__(self, db_path:str) -> None:
+    def __init__(self) -> None:
         self.accounts = {}
         self.orders = {}
         self.trades = {}
@@ -36,8 +32,9 @@ class StorageLedger:
         self.economy_insights = {}
         self.market_data = {}
         self.__last_flush_macro_tick = -1
-        
-        self.db_path = db_path
+
+        ENV_CONFIG = get_environment_configuration()
+        self.db_path = ENV_CONFIG.DB_PATH
         self.connection = sqlite3.connect(self.db_path)
 
         self.connection.execute("PRAGMA journal_mode=WAL;")

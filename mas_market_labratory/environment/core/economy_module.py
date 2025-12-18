@@ -2,10 +2,10 @@ from __future__ import annotations
 from typing import List, Tuple, Optional
 import random
 
-from mas_market_labratory.simulation.simulation_realtime_data import get_simulation_realtime_data
-from simulation_configurations import get_simulation_configurations
-from market.market_structures.economy_scenario import EconomyScenario
-from market.market_structures.economy_insight import EconomyInsight
+from environment.models import EconomyInsight
+from environment.configs import get_environment_configuration
+from environment.configs.models.economy_scenario import EconomyScenario
+from simulation import get_simulation_realtime_data
 
 
 
@@ -24,9 +24,9 @@ class EconomyModule:
 
 
     def __init__(self) -> None:
-        SIM_CONFIG = get_simulation_configurations()
+        ENV_CONFIG = get_environment_configuration()
         
-        self.scenario = SIM_CONFIG.ECONOMY_SCENARIO
+        self.scenario = ENV_CONFIG.ECONOMY_SCENARIO
         self.rng = random.Random(self.scenario.seed)
 
         self.__tv = [self.scenario.tv_initial]
@@ -142,7 +142,7 @@ class EconomyModule:
 
 
     def get_economy_insight(self) -> EconomyInsight:
-        SIM_CONFIG = get_simulation_configurations()
+        ENV_CONFIG = get_environment_configuration()
         SIM_REALTIME_DATA = get_simulation_realtime_data()
         
         tv = self.get_true_value(SIM_REALTIME_DATA.MACRO_TICK)
@@ -153,9 +153,9 @@ class EconomyModule:
 
         return EconomyInsight(
             macro_tick=SIM_REALTIME_DATA.MACRO_TICK,
-            true_value=int(tv * SIM_CONFIG.PRICE_SCALE),
+            true_value=int(tv * ENV_CONFIG.PRICE_SCALE),
             short_rate=short_rate,
             width=width,
-            tv_interval=(int(tv_low * SIM_CONFIG.PRICE_SCALE), int(tv_high * SIM_CONFIG.PRICE_SCALE)),
+            tv_interval=(int(tv_low * ENV_CONFIG.PRICE_SCALE), int(tv_high * ENV_CONFIG.PRICE_SCALE)),
             deposit_rates=dict(zip(self.scenario.deposit_terms, deposit_rates))
         )

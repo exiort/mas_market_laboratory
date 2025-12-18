@@ -4,13 +4,11 @@ from sortedcontainers import SortedDict
 from collections import deque
 import time
 
-from mas_market_labratory.simulation.market.market_structures.marketdata import MarketData
-from mas_market_labratory.simulation.simulation_configurations import get_simulation_configurations
-from simulation_realtime_data import get_simulation_realtime_data
-from market.market_components.exchange_ledger import ExchangeLedger
-from market.market_components.storage_ledger import StorageLedger
-from market.market_structures.order import Order, OrderType, Side, OrderLifecycle, OrderEndReasons
-from market.market_structures.trade import Trade
+from environment.core import SettlementLedger, StorageLedger
+from environment.models import Order, Trade, MarketData 
+from environment.models.order import OrderType, Side, OrderLifecycle, OrderEndReasons
+from environment.configs import get_environment_configuration
+from simulation.models import get_simulation_realtime_data 
 
 
 
@@ -228,16 +226,16 @@ class OrderBook:
 class CDAEngine:
     order_book:OrderBook
     storage_ledger:StorageLedger
-    exchange_ledger:ExchangeLedger
+    settlement_ledger:SettlementLedger
 
     __next_trade_id:int
 
     __trades:List[Tuple[int, int]] #price - volume
 
     
-    def __init__(self, storage_ledger:StorageLedger, exchange_ledger:ExchangeLedger) -> None:
+    def __init__(self, storage_ledger:StorageLedger, settlement_ledger:SettlementLedger) -> None:
         self.storage_ledger = storage_ledger
-        self.exchange_ledger = exchange_ledger
+        self.settlement_ledger = settlement_ledger
 
         self.order_book = OrderBook()
 
@@ -266,7 +264,7 @@ class CDAEngine:
         # 8-average_trade_price = None
         # 9-trades = {}
 
-        assert self.exchange_ledger.is_account_exist(order.agent_id) #1
+        assert self.settlement_ledger.is_account_exist(order.agent_id) #1
         assert order.quantity > 0 #4
         assert order.remaining_quantity == order.quantity #5
         assert order.lifecycle == OrderLifecycle.NEW #6
@@ -303,7 +301,7 @@ class CDAEngine:
         assert order.price > 0 #3
         assert order.lifecycle == OrderLifecycle.WORKING #6
 
-        is_account_available = self.exchange_ledger.limit_check_and_reserve_funds(order)
+        is_account_available = self.settlement_ledger.limit_check_and_reserve_funds(order)
         if not is_account_available:
             order.lifecycle = OrderLifecycle.DONE
             order.end_reason = OrderEndReasons.REJECTED_INSUFFICIENT_FUND
@@ -387,8 +385,8 @@ class CDAEngine:
 
         
         if wash_trade:
-            if order.side == Side.BUY: self.exchange_ledger.release_cash(order)
-            elif order.side == Side.SELL: self.exchange_ledger.release_shares(order)
+            if order.side == Side.BUY: self.settlement_ledger.release_cash(order)
+            elif order.side == Side.SELL: self.settlement_ledger.release_shares(order)
             else: assert False
             
             order.lifecycle = OrderLifecycle.DONE
@@ -439,7 +437,7 @@ class CDAEngine:
                 
                 trade_price = seller_order.price
                 
-                possible_shares = self.exchange_ledger.market_calculate_possible_quantities(buyer_order, trade_price=trade_price)
+                possible_shares = self.settlement_ledger.market_calculate_possible_quantities(buyer_order, trade_price=trade_price)
                 if possible_shares == 0:
                     insufficient_funds = True
                     break
@@ -462,7 +460,7 @@ class CDAEngine:
                 
                 trade_price = buyer_order.price
                 
-                possible_shares = self.exchange_ledger.market_calculate_possible_quantities(seller_order)
+                possible_shares = self.settlement_ledger.market_calculate_possible_quantities(seller_order)
 
                 if possible_shares == 0:
                     insufficient_funds = True
@@ -514,7 +512,7 @@ class CDAEngine:
 
         
     def __execute_trade(self, buyer_order:Order, seller_order:Order, trade:Trade) -> None:
-        self.exchange_ledger.settle_trade(buyer_order, seller_order, trade)
+        self.settlement_ledger.settle_trade(buyer_order, seller_order, trade)
         self.storage_ledger.add_trade(trade)
 
         self.__trades.append((trade.price, trade.quantity))
@@ -536,9 +534,9 @@ class CDAEngine:
         assert order is not None #9
         
         if order.side == Side.BUY:
-            self.exchange_ledger.release_cash(order)
+            self.settlement_ledger.release_cash(order)
         elif order.side == Side.SELL:
-            self.exchange_ledger.release_shares(order)
+            self.settlement_ledger.release_shares(order)
         else:
             assert False
 
@@ -563,19 +561,19 @@ class CDAEngine:
         bids, asks = book
         
         for bid in bids:
-            self.exchange_ledger.release_cash(bid)
+            self.settlement_ledger.release_cash(bid)
             bid.lifecycle = OrderLifecycle.DONE
             bid.end_reason = OrderEndReasons.EXPIRED
 
         for ask in asks:
-            self.exchange_ledger.release_shares(ask)
+            self.settlement_ledger.release_shares(ask)
             ask.lifecycle = OrderLifecycle.DONE
             ask.end_reason = OrderEndReasons.EXPIRED
             
             
     def get_market_data(self) -> MarketData:
         SIM_REALTIME_DATA = get_simulation_realtime_data()
-        SIM_CONFIG = get_simulation_configurations()
+        ENV_CONFIG = get_environment_configuration()
         
         l1_bids = self.order_book.get_l1_bids()
         l1_asks = self.order_book.get_l1_asks()
@@ -594,7 +592,7 @@ class CDAEngine:
         l2_bids = self.order_book.get_l2_bids()
         l2_asks = self.order_book.get_l2_asks()
 
-        N = SIM_CONFIG.L2_DEPTH
+        N = ENV_CONFIG.INSIGHT_L2_DEPTH
 
         bids_depth_N = 0
         if l2_bids is not None:

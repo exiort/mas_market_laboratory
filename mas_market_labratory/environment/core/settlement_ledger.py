@@ -4,17 +4,17 @@ from typing import Dict, List, Optional
 import math
 import time
 
-from storage_ledger import StorageLedger
-from simulation_configurations import get_simulation_configurations
-from simulation_realtime_data import get_simulation_realtime_data
-from market.market_structures.account import Account
-from market.market_structures.order import Order, OrderLifecycle, OrderEndReasons, OrderType, Side
-from market.market_structures.trade import Trade
-from market.market_structures.deposit import Deposit
+
+from environment.core import StorageLedger
+from environment.models import Account, Deposit, Order, Trade
+from environment.models.order import OrderType, Side, OrderLifecycle, OrderEndReasons
+from environment.configs import get_environment_configuration
+from mas_market_labratory.simulation.models.simulation_configurations import get_simulation_configurations
+from simulation import get_simulation_realtime_data
 
 
 
-class ExchangeLedger:
+class SettlementLedger:
     storage_ledger:StorageLedger
     
     accounts:Dict[int, Account] #AgentID -> Account
@@ -22,6 +22,7 @@ class ExchangeLedger:
     
     __next_account_id:int
     __next_deposit_id:int
+
     
     def __init__(self, storage_ledger:StorageLedger) -> None:
         self.accounts = {}
@@ -52,11 +53,11 @@ class ExchangeLedger:
         assert initial_cash >= 0
         assert initial_shares >= 0
 
-        SIM_CONFIG = get_simulation_configurations()
+        ENV_CONFIG = get_environment_configuration()
         account = Account(
             self.account_id,
             agent_id,
-            int(initial_cash * SIM_CONFIG.PRICE_SCALE),
+            int(initial_cash * ENV_CONFIG.PRICE_SCALE),
             initial_shares
         )
 
@@ -309,15 +310,16 @@ class ExchangeLedger:
     def create_deposit(self, agent_id:int, term:int, deposit_cash:float) -> Optional[Deposit]:
         assert self.is_account_exist(agent_id)
 
-        SIM_CONFIG = get_simulation_configurations()
-        assert term in SIM_CONFIG.ECONOMY_SCENARIO.deposit_terms 
+        ENV_CONFIG = get_environment_configuration()
+        assert term in ENV_CONFIG.ECONOMY_SCENARIO.deposit_terms 
         assert deposit_cash > 0
         
         SIM_REALTIME_DATA = get_simulation_realtime_data()
+        SIM_CONFIG = get_simulation_configurations()
         assert SIM_REALTIME_DATA.MACRO_TICK + term <= SIM_CONFIG.SIMULATION_MACRO_TICK
 
-        deposit_cash = int(deposit_cash * SIM_CONFIG.PRICE_SCALE)
-        interest_rate = SIM_REALTIME_DATA.ECONOMY_INSIGHT.deposit_rates[term]
+        deposit_cash = int(deposit_cash * ENV_CONFIG.PRICE_SCALE)
+        interest_rate = SIM_REALTIME_DATA.ECONOMY_INSIGHT_VIEW.deposit_rates[term]
         deposit = Deposit(
             deposit_id=self.deposit_id,
             agent_id=agent_id,

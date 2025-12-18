@@ -3,8 +3,8 @@ from typing import Optional, Dict
 from enum import Enum, auto
 from dataclasses import dataclass, field
 
-from market.market_structures.orderview import OrderView
-from market.market_structures.trade import Trade
+from environment.models import Trade
+from environment.views import OrderView
 
 
 

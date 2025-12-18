@@ -1,8 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-from simulation_configurations import get_simulation_configurations
-from market.market_structures.tradeview import TradeView
+from environment.views import TradeView
+from environment.configs import get_environment_configuration
 
 
 
@@ -25,13 +25,13 @@ class Trade:
     
     
     def create_view(self) -> TradeView:
-        SIM_CONFIG = get_simulation_configurations()
+        ENV_CONFIG = get_environment_configuration()
         
         return TradeView(
             trade_id=self.trade_id,
             timestamp=self.timestamp,
             macro_tick=self.macro_tick,
             micro_tick=self.micro_tick,
-            price=self.price / SIM_CONFIG.PRICE_SCALE,
+            price=self.price / ENV_CONFIG.PRICE_SCALE,
             quantity=self.quantity
         )

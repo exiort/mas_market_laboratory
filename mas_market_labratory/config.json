@@ -1,0 +1,33 @@
+{
+    "simulation_config" : {
+	"simulation_macro_tick": 20,
+	"simulation_micro_tick": 30,
+	"init_macro_tick": 0,
+	"init_micro_tick": 0
+    },
+    
+    "environment_config" : {
+	"price_scale": 10000,
+	"db_path": "mas_market_labratory/data/",
+	"insight_l2_depth": 10,
+	"economy_scenario_seed": 1923,
+	"economy_scenario_tv_initial": 100.0,
+	"economy_scenario_tv_long_run_mean": 100.0,
+	"economy_scenario_tv_drift": 0.5,
+	"economy_scenario_tv_mean_reversion": 0.1,
+	"economy_scenario_tv_vol": 1.0,
+	"economy_scenario_r_initial": 0.02,
+	"economy_scenario_r_long_run_mean": 0.02,
+	"economy_scenario_r_mean_reversion": 0.2,
+	"economy_scenario_r_vol": 0.005,
+	"economy_scenario_tv_interval_base_width": 10.0,
+	"economy_scenario_tv_interval_vol": 2.0,
+	"economy_scenario_term_curve_slope": 0.001,
+	"economy_scenario_term_curve_curvature": 0.0,
+	"economy_scenario_deposit_terms": [3, 7, 15]
+    },
+    
+    "agents_config": {
+	
+    }
+}

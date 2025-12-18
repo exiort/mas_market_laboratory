@@ -1,8 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-from simulation_configurations import get_simulation_configurations
-from market_structures.depositview import DepositView
+from environment.views import DepositView
+from environment.configs import get_environment_configuration
 
 
 
@@ -22,14 +22,14 @@ class Deposit:
 
 
     def create_view(self) -> DepositView:
-        SIM_CONFIG = get_simulation_configurations()
+        ENV_CONFIG = get_environment_configuration()
         
         return DepositView(
             deposit_id=self.deposit_id,
             agent_id=self.agent_id,
             creation_macro_tick=self.creation_macro_tick,
             maturity_macro_tick=self.maturity_macro_tick,
-            deposited_cash=self.deposited_cash / SIM_CONFIG.PRICE_SCALE,
+            deposited_cash=self.deposited_cash / ENV_CONFIG.PRICE_SCALE,
             interest_rate=self.interest_rate,
-            matured_cash=self.matured_cash / SIM_CONFIG.PRICE_SCALE
+            matured_cash=self.matured_cash / ENV_CONFIG.PRICE_SCALE
         )

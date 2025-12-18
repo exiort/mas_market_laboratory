@@ -2,21 +2,17 @@ from __future__ import annotations
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
-from market.market_structures.economy_scenario import EconomyScenario
-
 
 
 class SimulationConfigurations(BaseSettings):
-    PRICE_SCALE:int
-
     SIMULATION_MACRO_TICK:int
     SIMULATION_MICRO_TICK:int
 
-    ECONOMY_SCENARIO:EconomyScenario
+    INIT_MACRO_TICK:int
+    INIT_MICRO_TICK:int
 
     model_config = SettingsConfigDict(frozen=True)
 
-    L2_DEPTH:int
     
 __SIMULATION_CONFIGURATION:Optional[SimulationConfigurations] = None
 
