@@ -30,13 +30,18 @@ class AccountView:
         return self.__account.shares
 
 
-    def reserved_cash(self) -> Dict[int, Tuple[int, int]]:
-        return self.__account.reserved_cash.copy()
+    def reserved_cash(self) -> Dict[int, Tuple[int, float]]:
+        ENV_CONFIG = get_environment_configuration()
+        
+        return {k: (v[0], v[1] / ENV_CONFIG.PRICE_SCALE) for k, v in self.__account.reserved_cash.items()}
 
 
     def reserved_shares(self) -> Dict[int, int]:
         return self.__account.reserved_shares.copy()
 
+    
+    def deposited_cash(self) -> Dict[int, float]:
+        ENV_CONFIG = get_environment_configuration()
 
-    def deposited_cash(self) -> Dict[int, int]:
-        return self.__account.deposited_cash.copy()
+        return {k: v / ENV_CONFIG.PRICE_SCALE for k, v in self.__account.deposited_cash.items()}
+        

@@ -86,8 +86,8 @@ class SimulationInitializer:
         assert isinstance(db_path, str)
         insight_l2_depth = environment_config["insight_l2_depth"]
         assert isinstance(insight_l2_depth, int)
-        fee_rate = environment_config["fee_rate"]
-        assert isinstance(fee_rate, float)
+        fee_rate_ppm = environment_config["fee_rate_ppm"]
+        assert isinstance(fee_rate_ppm, int)
         
         set_environment_configuration(
             EnvironmentConfiguration(
@@ -95,7 +95,7 @@ class SimulationInitializer:
                 DB_PATH=db_path,
                 INSIGHT_L2_DEPTH=insight_l2_depth,
                 ECONOMY_SCENARIO=scenario,
-                FEE_RATE=fee_rate
+                FEE_RATE_PPM=fee_rate_ppm
             )
         )
 
@@ -149,7 +149,8 @@ class SimulationInitializer:
             bids_depth_N=-1,
             asks_depth_N=-1,
             imbalance_N=None,
-            vwap=None
+            vwap_macro=None,
+            vwap_micro=None
         )
         
         set_simulation_realtime_data(

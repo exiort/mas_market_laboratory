@@ -55,9 +55,7 @@ class Order:
     
     remaining_quantity:int = field(init=False)
     
-    #average_trade_price:Optional[int] = field(default=None)
     trades:Dict[int, Trade] = field(default_factory=dict)
-    #paid_fee:Optional[int] = field(default=None)
 
     
     def __post_init__(self) -> None:

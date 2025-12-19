@@ -14,7 +14,7 @@ class MarketDataView:
     trade_volume:int
 
     last_traded_price:Optional[float]
-    last_trade_size:Optional[float]
+    last_trade_size:Optional[int]
 
     L1_bids:Optional[Tuple[float, int, int]]
     L1_asks:Optional[Tuple[float, int, int]]
@@ -30,5 +30,5 @@ class MarketDataView:
     bids_depth_N:int
     asks_depth_N:int
     imbalance_N:Optional[float]
-    vwap:Optional[float]
-    
+    vwap_macro:Optional[float]
+    vwap_micro:Optional[float]

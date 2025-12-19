@@ -193,9 +193,7 @@ class StorageLedger:
             lifecycle TEXT NOT NULL,
             end_reason TEXT NOT NULL,
 
-            remaining_quantity INTEGER NOT NULL,
-
-            average_trade_price INTEGER
+            remaining_quantity INTEGER NOT NULL
             );
             """
         )
@@ -216,7 +214,8 @@ class StorageLedger:
             sell_order_id INTEGER NOT NULL,
 
             price INTEGER NOT NULL,
-            quantity INTEGER NOT NULL
+            quantity INTEGER NOT NULL,
+            fee INTEGER NOT NULL
             );
             """
         )
@@ -298,7 +297,8 @@ class StorageLedger:
             bids_depth_N INTEGER NOT NULL,
             asks_depth_N INTEGER NOT NULL,
             imbalance_N REAL,
-            vwap INTEGER
+            vwap_macro INTEGER,
+            vwap_micro INTEGER
             );
             """
         )
@@ -319,10 +319,9 @@ class StorageLedger:
             price,
             lifecycle,
             end_reason,
-            remaining_quantity,
-            average_trade_price
+            remaining_quantity
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 order.order_id,
@@ -336,8 +335,7 @@ class StorageLedger:
                 order.price,
                 order.lifecycle.name,
                 order.end_reason.name,
-                order.remaining_quantity,
-                order.average_trade_price
+                order.remaining_quantity
             )
         )
 
@@ -355,9 +353,10 @@ class StorageLedger:
             seller_agent_id,
             sell_order_id,
             price,
-            quantity
+            quantity,
+            fee
             )
-            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 trade.trade_id,
@@ -369,7 +368,8 @@ class StorageLedger:
                 trade.seller_agent_id,
                 trade.sell_order_id,
                 trade.price,
-                trade.quantity
+                trade.quantity,
+                trade.fee
             )
         )
 
@@ -479,7 +479,8 @@ class StorageLedger:
             bids_depth_N,
             asks_depth_N,
             imbalance_N,
-            vwap
+            vwap_macro,
+            vwap_micro
             )
             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
@@ -502,6 +503,7 @@ class StorageLedger:
                 market_data.bids_depth_N,
                 market_data.asks_depth_N,
                 market_data.imbalance_N,
-                market_data.vwap
+                market_data.vwap_macro,
+                market_data.vwap_micro
             )
         )

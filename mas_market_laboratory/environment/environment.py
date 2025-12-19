@@ -28,7 +28,7 @@ class Environment:
         )
 
         self.economy_module = EconomyModule()        
-        self._next_order_id = 0
+        self.__next_order_id = 0
         
 
     @property

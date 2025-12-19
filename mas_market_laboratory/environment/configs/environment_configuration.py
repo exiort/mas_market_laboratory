@@ -13,7 +13,7 @@ class EnvironmentConfiguration(BaseSettings):
     INSIGHT_L2_DEPTH:int
     ECONOMY_SCENARIO:EconomyScenario
 
-    FEE_RATE:float
+    FEE_RATE_PPM:int #Parts Per Million
     model_config = SettingsConfigDict(frozen=True)
 
 

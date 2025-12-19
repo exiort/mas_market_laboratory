@@ -56,7 +56,7 @@ class SimulationRealTimeData:
         return self.__market_data_view
 
     
-    def step_hybrit_time(self) -> bool:
+    def step_hybrid_time(self) -> bool:
         self.__macro_tick += (self.__micro_tick + 1) // self.__simulation_micro_tick
         self.__micro_tick = (self.__micro_tick + 1) % self.__simulation_micro_tick
 

@@ -33,8 +33,9 @@ class MarketData:
     bids_depth_N:int
     asks_depth_N:int
     imbalance_N:Optional[float]
-    vwap:Optional[int]
-    
+    vwap_macro:Optional[int]
+    vwap_micro:Optional[int]
+
     
     def create_view(self) -> MarketDataView:
         ENV_CONFIG = get_environment_configuration()
@@ -44,7 +45,7 @@ class MarketData:
             last_traded_price = self.last_traded_price / ENV_CONFIG.PRICE_SCALE
 
         L1_bids = None
-        if self.L1_bids is not  None:
+        if self.L1_bids is not None:
             L1_bids = (self.L1_bids[0] / ENV_CONFIG.PRICE_SCALE, self.L1_bids[1], self.L1_bids[2])
 
         L1_asks = None
@@ -71,14 +72,15 @@ class MarketData:
         if self.L2_asks is not None:
             L2_asks = tuple((p / ENV_CONFIG.PRICE_SCALE, v, c) for p, v, c in self.L2_asks)
 
-        imbalance_N = None
-        if self.imbalance_N is not None:
-            imbalance_N = self.imbalance_N / ENV_CONFIG.PRICE_SCALE
+        vwap_macro = None
+        if self.vwap_macro is not None:
+            vwap_macro = self.vwap_macro / ENV_CONFIG.PRICE_SCALE
 
-        vwap = None
-        if self.vwap is not None:
-            vwap = self.vwap / ENV_CONFIG.PRICE_SCALE
-
+        vwap_micro = None
+        if self.vwap_micro is not None:
+            vwap_micro = self.vwap_micro / ENV_CONFIG.PRICE_SCALE
+            
+            
         return MarketDataView(
             timestamp=self.timestamp,
             macro_tick=self.macro_tick,
@@ -97,6 +99,7 @@ class MarketData:
             N=self.N,
             bids_depth_N=self.bids_depth_N,
             asks_depth_N=self.asks_depth_N,
-            imbalance_N=imbalance_N,
-            vwap=vwap
+            imbalance_N=self.imbalance_N,
+            vwap_macro=vwap_macro,
+            vwap_micro=vwap_micro
         )

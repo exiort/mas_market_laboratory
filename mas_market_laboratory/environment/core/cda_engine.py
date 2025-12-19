@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Dict, List, Optional, Tuple, Deque
+from typing import Callable, Dict, Optional, Tuple, Deque
 from sortedcontainers import SortedDict
 from collections import deque
 import time
@@ -233,7 +233,15 @@ class CDAEngine:
 
     __next_trade_id:int
 
-    __trades:List[Tuple[int, int]] #price - volume
+    #__trades:List[Tuple[int, int]] #price - volume
+    __last_traded_price:Optional[int]
+    __last_trade_volume:Optional[int]
+
+    __macro_trade_value:int
+    __macro_trade_volume:int
+    __micro_trade_count:int
+    __micro_trade_value:int
+    __micro_trade_volume:int
 
     
     def __init__(self, storage_ledger:StorageLedger, settlement_ledger:SettlementLedger) -> None:
@@ -244,9 +252,17 @@ class CDAEngine:
 
         self.__next_trade_id = 0
 
-        self.__trades = []
+        #self.__trades = []
+        self.__last_traded_price = None
+        self.__last_trade_volume = None
 
-
+        self.__macro_trade_value = 0
+        self.__macro_trade_volume = 0
+        self.__micro_trade_count = 0
+        self.__micro_trade_value = 0
+        self.__micro_trade_volume = 0
+    
+        
     @property
     def trade_id(self) -> int:
         trade_id = self.__next_trade_id 
@@ -326,14 +342,14 @@ class CDAEngine:
                 buyer_order = order
                 assert buyer_order.price is not None 
 
+                if buyer_order.price < seller_order.price:
+                    non_crossing = True
+                    break
+                
                 if buyer_order.agent_id == seller_order.agent_id:
                     wash_trade = True
                     break
                 
-                if buyer_order.price < seller_order.price:
-                    non_crossing = True
-                    break
-
                 trade_price = seller_order.price
                 
             elif order.side == Side.SELL:
@@ -348,14 +364,14 @@ class CDAEngine:
                 seller_order = order 
                 assert seller_order.price is not None
 
-                if buyer_order.agent_id == seller_order.agent_id:
-                    wash_trade = True
-                    break
-                
                 if buyer_order.price < seller_order.price:
                     non_crossing = True
                     break
 
+                if buyer_order.agent_id == seller_order.agent_id:
+                    wash_trade = True
+                    break
+                
                 trade_price = buyer_order.price
                 
             else:
@@ -377,7 +393,7 @@ class CDAEngine:
                 buy_order_id=buyer_order.order_id,
                 price=trade_price,
                 quantity=trade_quantity,
-                fee=int(trade_price * trade_quantity * ENV_CONFIG.FEE_RATE)
+                fee=trade_price * trade_quantity * ENV_CONFIG.FEE_RATE_PPM // 1000000
             )
 
             self.__execute_trade(buyer_order, seller_order, trade)
@@ -491,7 +507,7 @@ class CDAEngine:
                 buy_order_id=buyer_order.order_id,
                 price=trade_price,
                 quantity=trade_quantity,
-                fee=int(trade_price * trade_quantity * ENV_CONFIG.FEE_RATE)
+                fee=trade_price * trade_quantity * ENV_CONFIG.FEE_RATE_PPM // 1000000
             )
 
             self.__execute_trade(buyer_order, seller_order, trade)
@@ -523,7 +539,16 @@ class CDAEngine:
         self.settlement_ledger.settle_trade(buyer_order, seller_order, trade)
         self.storage_ledger.add_trade(trade)
 
-        self.__trades.append((trade.price, trade.quantity))
+        #self.__trades.append((trade.price, trade.quantity))
+        self.__last_traded_price = trade.price
+        self.__last_trade_volume = trade.quantity
+
+        self.__macro_trade_value += trade.price * trade.quantity
+        self.__macro_trade_volume += trade.quantity
+
+        self.__micro_trade_count += 1
+        self.__micro_trade_value += trade.price * trade.quantity
+        self.__micro_trade_volume += trade.quantity
         
     
     def cancel_order(self, order_id:int) -> None:
@@ -577,7 +602,10 @@ class CDAEngine:
             self.settlement_ledger.release_shares(ask)
             ask.lifecycle = OrderLifecycle.DONE
             ask.end_reason = OrderEndReasons.EXPIRED
-            
+
+        self.__macro_trade_value = 0
+        self.__macro_trade_volume = 0
+        
             
     def get_market_data(self) -> MarketData:
         SIM_REALTIME_DATA = get_simulation_realtime_data()
@@ -588,8 +616,8 @@ class CDAEngine:
 
         if l1_bids is not None and l1_asks is not None:
             spread = l1_asks[0] - l1_bids[0]
-            mid_price = int((l1_asks[0] + l1_bids[0]) / 2)
-            micro_price = int((l1_asks[0] * l1_bids[1] + l1_bids[0] * l1_asks[1]) / (l1_bids[1] + l1_asks[1]))
+            mid_price = (l1_asks[0] + l1_bids[0]) // 2
+            micro_price = (l1_asks[0] * l1_bids[1] + l1_bids[0] * l1_asks[1]) // (l1_bids[1] + l1_asks[1])
             
         else:
             spread = None
@@ -617,25 +645,27 @@ class CDAEngine:
         else:
             imbalance_N = (bids_depth_N - asks_depth_N) / (bids_depth_N + asks_depth_N) 
 
-        trade_count = len(self.__trades)
-        trade_volume = 0
+        last_traded_price = self.__last_traded_price
+        last_trade_volume = self.__last_trade_volume
+            
+        trade_count = self.__micro_trade_count
+        trade_volume = self.__micro_trade_volume
 
-        if trade_count == 0:
-            last_traded_price = None
-            last_trade_volume = None
-            vwap = None
+        if self.__macro_trade_volume == 0:
+            vwap_macro = None
         else:
-            last_traded_price = self.__trades[-1][0]
-            last_trade_volume = self.__trades[-1][1]
+            vwap_macro = self.__macro_trade_value // self.__macro_trade_volume
         
-            vwap_num = 0
-            for trade in self.__trades:
-                trade_volume += trade[1]
-                vwap_num += trade[0] * trade[1]
-
-            vwap = int(vwap_num / trade_volume)
-
-        self.__trades.clear()
+        if self.__micro_trade_volume == 0:
+            vwap_micro = None
+        else:
+            vwap_micro = self.__micro_trade_value // self.__micro_trade_volume
+            
+        self.__last_traded_price = None
+        self.__last_trade_volume = None
+        self.__micro_trade_count = 0
+        self.__micro_trade_value = 0
+        self.__micro_trade_volume = 0
         
         return MarketData(
             timestamp=time.time(),
@@ -656,6 +686,7 @@ class CDAEngine:
             bids_depth_N=bids_depth_N,
             asks_depth_N=asks_depth_N,
             imbalance_N=imbalance_N,
-            vwap=vwap
+            vwap_macro=vwap_macro,
+            vwap_micro=vwap_micro
         )
 
