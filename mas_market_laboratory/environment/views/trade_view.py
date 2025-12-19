@@ -13,3 +13,5 @@ class TradeView:
 
     price:float
     quantity:int
+
+    fee:float

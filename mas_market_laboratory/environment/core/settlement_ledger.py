@@ -90,15 +90,19 @@ class SettlementLedger:
         assert order.remaining_quantity == order.quantity #5
         assert order.lifecycle == OrderLifecycle.WORKING #6
         assert order.end_reason == OrderEndReasons.NONE #7
-        assert order.average_trade_price is None #8
+        #assert order.average_trade_price is None #8
         assert not order.trades #9
         
         account = self.accounts.get(order.agent_id)
         assert account is not None #1
+
+        ENV_CONFIG = get_environment_configuration()
         
         if order.side == Side.BUY:
-            required_cash = order.quantity * order.price
-
+            trade_cost = order.quantity * order.price
+            fee = int(trade_cost * ENV_CONFIG.FEE_RATE)
+            required_cash = trade_cost + fee
+            
             if account.cash < required_cash:
                 return False
 
@@ -142,7 +146,9 @@ class SettlementLedger:
 
         if order.side == Side.BUY:
             assert trade_price is not None
-            return min(int(math.floor(account.cash / trade_price)), order.remaining_quantity)
+            ENV_CONFIG = get_environment_configuration()
+            trade_fee = int(trade_price * ENV_CONFIG.FEE_RATE)
+            return min(int(math.floor(account.cash / (trade_price + trade_fee))), order.remaining_quantity)
 
         elif order.side == Side.SELL:
             return min(order.remaining_quantity, account.shares)
@@ -183,8 +189,13 @@ class SettlementLedger:
         reserved_quantity, reserved_price = account.reserved_cash[order.order_id]    
         released_quantity = traded_quantity if traded_quantity is not None else reserved_quantity
         assert released_quantity <= reserved_quantity #11
+
+        ENV_CONFIG = get_environment_configuration()
+
+        released_cost = released_quantity * reserved_price
+        released_fee = int(released_cost * ENV_CONFIG.FEE_RATE)
+        released_cash = released_cost + released_fee
         
-        released_cash = released_quantity * reserved_price
         account.reserved_cash[order.order_id] = (reserved_quantity - released_quantity, reserved_price)
 
         if account.reserved_cash[order.order_id][0] == 0:
@@ -277,10 +288,12 @@ class SettlementLedger:
 
         buyer_account.cash -= trade_cost
         buyer_account.shares += trade.quantity
-
+        buyer_account.cash -= trade.fee
+        
         seller_account.cash += trade_cost
         seller_account.shares -= trade.quantity
-
+        seller_account.cash -= trade.fee
+        
         assert buyer_account.cash >= 0.0
         assert seller_account.shares >= 0
 
@@ -290,22 +303,22 @@ class SettlementLedger:
         buyer_order.trades[trade.trade_id] = trade
         seller_order.trades[trade.trade_id] = trade
 
-        self.__update_average_trade_price(buyer_order)
-        self.__update_average_trade_price(seller_order)
+        #self.__update_average_trade_price(buyer_order)
+        #self.__update_average_trade_price(seller_order)
 
         
-    def __update_average_trade_price(self, order:Order):
-        if not order.trades:
-            return
+    def __update_average_trade_price(self, order:Order):...
+        #if not order.trades:
+        #    return
 
-        total_quantity = 0
-        price_sum = 0
+        #total_quantity = 0
+        #price_sum = 0
 
-        for trade in order.trades.values():
-            total_quantity += trade.quantity
-            price_sum += trade.price * trade.quantity
+        #for trade in order.trades.values():
+        #    total_quantity += trade.quantity
+        #    price_sum += trade.price * trade.quantity
 
-        order.average_trade_price = int(price_sum / total_quantity)
+        #order.average_trade_price = int(price_sum / total_quantity)
 
 
     def create_deposit(self, agent_id:int, term:int, deposit_cash:float) -> Optional[Deposit]:

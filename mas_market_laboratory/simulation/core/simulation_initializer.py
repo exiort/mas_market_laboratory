@@ -86,13 +86,16 @@ class SimulationInitializer:
         assert isinstance(db_path, str)
         insight_l2_depth = environment_config["insight_l2_depth"]
         assert isinstance(insight_l2_depth, int)
+        fee_rate = environment_config["fee_rate"]
+        assert isinstance(fee_rate, float)
         
         set_environment_configuration(
             EnvironmentConfiguration(
                 PRICE_SCALE=price_scale,
                 DB_PATH=db_path,
                 INSIGHT_L2_DEPTH=insight_l2_depth,
-                ECONOMY_SCENARIO=scenario
+                ECONOMY_SCENARIO=scenario,
+                FEE_RATE=fee_rate
             )
         )
 

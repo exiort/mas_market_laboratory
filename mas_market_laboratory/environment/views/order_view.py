@@ -80,15 +80,6 @@ class OrderView:
     def remaining_quantity(self) -> int:
         return self.__order.remaining_quantity
 
-
-    @property
-    def average_trade_price(self) -> Optional[float]:
-        if self.__order.average_trade_price is None:
-            return None
-
-        ENV_CONFIG = get_environment_configuration()
-        return self.__order.average_trade_price / ENV_CONFIG.PRICE_SCALE
-
     
     @property
     def trades(self) -> Tuple[TradeView, ...]:
@@ -97,3 +88,21 @@ class OrderView:
             trade_views.append(trade.create_view())
 
         return tuple(trade_views)
+
+"""
+    @property
+    def paid_fee(self) -> Optional[float]:
+        if self.__order.paid_fee is None:
+            return
+
+        ENV_CONFIG = get_environment_configuration()
+        return self.__order.paid_fee / ENV_CONFIG.PRICE_SCALE
+
+    @property
+    def average_trade_price(self) -> Optional[float]:
+        if self.__order.average_trade_price is None:
+            return None
+
+        ENV_CONFIG = get_environment_configuration()
+        return self.__order.average_trade_price / ENV_CONFIG.PRICE_SCALE
+"""

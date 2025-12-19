@@ -272,7 +272,7 @@ class CDAEngine:
         assert order.remaining_quantity == order.quantity #5
         assert order.lifecycle == OrderLifecycle.NEW #6
         assert order.end_reason == OrderEndReasons.NONE #7
-        assert order.average_trade_price is None #8
+        #assert order.average_trade_price is None #8
         assert not order.trades #9
         
         order.lifecycle = OrderLifecycle.WORKING
@@ -364,6 +364,7 @@ class CDAEngine:
             trade_quantity = min(buyer_order.remaining_quantity, seller_order.remaining_quantity)
 
             SIM_REALTIME_DATA = get_simulation_realtime_data()
+            ENV_CONFIG = get_environment_configuration()
 
             trade = Trade(
                 trade_id=self.trade_id,
@@ -375,7 +376,8 @@ class CDAEngine:
                 buyer_agent_id=buyer_order.agent_id,
                 buy_order_id=buyer_order.order_id,
                 price=trade_price,
-                quantity=trade_quantity
+                quantity=trade_quantity,
+                fee=int(trade_price * trade_quantity * ENV_CONFIG.FEE_RATE)
             )
 
             self.__execute_trade(buyer_order, seller_order, trade)
@@ -402,7 +404,8 @@ class CDAEngine:
 
         order.lifecycle = OrderLifecycle.DONE
         order.end_reason = OrderEndReasons.FILLED
-            
+
+                          
     def __process_new_market_order(self, order:Order) -> None:
         # Expectations:
         # 1-agent_exist (ASSURED)
@@ -475,6 +478,7 @@ class CDAEngine:
             trade_quantity = min(possible_shares, maker_order.remaining_quantity)
 
             SIM_REALTIME_DATA = get_simulation_realtime_data()
+            ENV_CONFIG = get_environment_configuration()
             
             trade = Trade(
                 trade_id=self.trade_id,
@@ -486,7 +490,8 @@ class CDAEngine:
                 buyer_agent_id=buyer_order.agent_id,
                 buy_order_id=buyer_order.order_id,
                 price=trade_price,
-                quantity=trade_quantity
+                quantity=trade_quantity,
+                fee=int(trade_price * trade_quantity * ENV_CONFIG.FEE_RATE)
             )
 
             self.__execute_trade(buyer_order, seller_order, trade)

@@ -23,6 +23,8 @@ class Trade:
     price:int
     quantity:int
     
+    fee:int
+
     
     def create_view(self) -> TradeView:
         ENV_CONFIG = get_environment_configuration()
@@ -33,5 +35,6 @@ class Trade:
             macro_tick=self.macro_tick,
             micro_tick=self.micro_tick,
             price=self.price / ENV_CONFIG.PRICE_SCALE,
-            quantity=self.quantity
+            quantity=self.quantity,
+            fee=self.fee / ENV_CONFIG.PRICE_SCALE
         )

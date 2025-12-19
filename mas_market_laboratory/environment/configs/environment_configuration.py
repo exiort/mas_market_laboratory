@@ -12,7 +12,8 @@ class EnvironmentConfiguration(BaseSettings):
     
     INSIGHT_L2_DEPTH:int
     ECONOMY_SCENARIO:EconomyScenario
-    
+
+    FEE_RATE:float
     model_config = SettingsConfigDict(frozen=True)
 
 
