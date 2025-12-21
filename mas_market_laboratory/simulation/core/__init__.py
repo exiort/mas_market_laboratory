@@ -1,4 +1,4 @@
-from .simulation_initializer import SimulationInitializer
+from .initializer import SimulationInitializer
 
 
 

@@ -7,8 +7,8 @@ from environment.models import Account, Deposit, Order, Trade
 from environment.models.order import OrderType, Side, OrderLifecycle, OrderEndReasons
 from environment.configs import get_environment_configuration
 
-from simulation.models.simulation_configurations import get_simulation_configurations
-from simulation import get_simulation_realtime_data
+from simulation.configs.simulation_configurations import get_simulation_configurations
+from simulation.configs import get_simulation_realtime_data
 
 from .storage_ledger import StorageLedger
 

@@ -6,7 +6,7 @@ from environment.models import EconomyInsight
 from environment.configs import get_environment_configuration
 from environment.configs.models.economy_scenario import EconomyScenario
 
-from simulation import get_simulation_realtime_data
+from simulation.configs import get_simulation_realtime_data
 
 
 

@@ -6,7 +6,7 @@ import json
 from environment.models import Account, Deposit, EconomyInsight, MarketData, Order, Trade 
 from environment.configs import get_environment_configuration
 
-from simulation import get_simulation_realtime_data
+from simulation.configs import get_simulation_realtime_data
 
 
 

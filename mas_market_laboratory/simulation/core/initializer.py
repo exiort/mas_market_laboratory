@@ -6,9 +6,9 @@ from environment.configs import set_environment_configuration
 from environment.views.economy_insight_view import EconomyInsightView
 from environment.views.market_data_view import MarketDataView
 
-from simulation.models import set_simulation_configuration, set_simulation_realtime_data
-from simulation.models.simulation_configurations import SimulationConfigurations, get_simulation_configurations 
-from simulation.models.simulation_realtime_data import SimulationRealTimeData 
+from simulation.configs import set_simulation_configuration, set_simulation_realtime_data
+from simulation.configs.simulation_configurations import SimulationConfigurations, get_simulation_configurations 
+from simulation.configs.simulation_realtime_data import SimulationRealTimeData
 
 
 

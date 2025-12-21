@@ -7,7 +7,7 @@ from environment.core import CDAEngine, EconomyModule, SettlementLedger, Storage
 from environment.models.order import Order, OrderLifecycle, OrderEndReasons, Side, OrderType
 from environment.views import AccountView, DepositView, MarketDataView, OrderView, EconomyInsightView
 
-from simulation import get_simulation_configurations, get_simulation_realtime_data
+from simulation.configs import get_simulation_configurations, get_simulation_realtime_data
 
 
 
